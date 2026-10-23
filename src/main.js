@@ -673,13 +673,12 @@ function renderQuickbuy() {
     },
   });
 
-  // Второе поле — страна (для лицензии ProxyFarm — число модемов)
+  // У лицензии ProxyFarm два поля — Тариф и Срок, модемы — счётчиком в стоимости (как количество у прокси)
+  $('#quickbuy').classList.toggle('is-farm', farm);
+
+  // Второе поле — страна
   const second = $('#qb-second-field');
-  if (farm) {
-    second.innerHTML = `
-      <span class="quickbuy__label" id="qb-modems-label">Модемов</span>
-      ${stepperHtml('modems', farmState.modems, data.farm.maxModems, 'qb-modems-label')}`;
-  } else {
+  if (!farm) {
     renderDropdown(second, {
       id: 'qb-country',
       label: 'Страна',
@@ -697,7 +696,6 @@ function renderQuickbuy() {
 
   // Оператор и город — отдельное поле; у IPv4 их нет, у лицензии поле скрыто
   const opField = $('#qb-op-field');
-  opField.hidden = farm;
   const opCountry = countryById[state.country];
   if (!farm && isMobileType() && opCountry.operators) {
     const opOptions = opCountry.operators.flatMap((o) => [
@@ -762,7 +760,9 @@ function renderQuickbuy() {
     $('#qb-total').textContent = rub(r.total);
     $('#qb-old').textContent = r.discount ? rub(r.subtotal) : '';
     $('#qb-unit').textContent = `(${rub(data.farm.pricePerModem)} за модем в месяц)`;
-    extra.innerHTML = `<span>Пробный период — ${data.farm.trialDays} дней бесплатно</span>`;
+    extra.innerHTML = `
+      ${stepperHtml('modems', farmState.modems, data.farm.maxModems, null, 'Количество модемов')}
+      <span class="qb-qty-unit">${plural(farmState.modems, ['модем', 'модема', 'модемов'])}</span>`;
     $('#qb-buy').textContent = 'Купить лицензию';
   } else {
     const r = calc();

@@ -5936,3 +5936,49 @@ body.dd-open {
     margin-top: 0;
   }
 }
+
+/* ---------- Лицензия ProxyFarm: два поля в ряд, как у proxy-seller ---------- */
+.quickbuy.is-farm #qb-second-field,
+.quickbuy.is-farm #qb-op-field {
+  display: none;
+}
+
+.quickbuy.is-farm {
+  grid-template-columns: 1fr 1fr !important;
+}
+
+.quickbuy.is-farm > * {
+  grid-column: auto !important;
+}
+
+@media (max-width: 767px) {
+  .quickbuy.is-farm > * {
+    grid-column: span 2 !important;
+  }
+}
+
+/* ---------- Панель списка — во всю ширину своей плашки ---------- */
+@media (min-width: 768px) {
+  .quickbuy .dd__popup,
+  .quickbuy__field:nth-child(n) .dd__popup {
+    left: -1px;
+    right: auto;
+    width: max(calc(100% + 2px), var(--dd-min, 300px));
+    min-width: 0;
+  }
+
+  .quickbuy__field:nth-child(1) .dd__popup {
+    --dd-min: 360px;
+  }
+
+  .quickbuy__field:nth-child(2) .dd__popup,
+  .quickbuy__field:nth-child(3) .dd__popup {
+    --dd-min: 340px;
+  }
+
+  /* Крайняя правая плашка: если панель шире неё — раскрывается влево */
+  .quickbuy__field:nth-child(4) .dd__popup {
+    left: auto;
+    right: -1px;
+  }
+}
