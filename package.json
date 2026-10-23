@@ -1,0 +1,15 @@
+{
+  "name": "frigate-proxy-home",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Кликабельный прототип главной страницы frigate-proxy.ru (UX-редизайн)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^8.3.5"
+  }
+}
