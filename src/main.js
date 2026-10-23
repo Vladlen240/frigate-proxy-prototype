@@ -151,10 +151,8 @@ const reviewsRounded = `${Math.floor(reviewsTotal / 1000) * 1000}+`;
 
 function renderStatic() {
   $$('[data-pay-icons]').forEach((el) => (el.innerHTML = payIconsHtml()));
-
-  // Первый экран: оценка над заголовком и короткие гарантии под формой
+  // Первый экран: оценка над заголовком
   $('#hero-rating').innerHTML = `<span class="star" aria-hidden="true">★★★★★</span> <b>${ratingStr}</b> · ${reviewsRounded} отзывов`;
-  $('#hero-checks').innerHTML = data.heroChecks.map((c) => `<li><span data-icon="check"></span>${esc(c)}</li>`).join('');
 
   // Полоса доверия
   const { years, clients, sold } = data.stats;
@@ -484,10 +482,16 @@ function renderDropdown(field, { id, label, options, value, onChange }) {
   const opt = (o) => {
     if (o.group) return `<li class="dd__group" role="presentation">${esc(o.group)}</li>`;
     const sel = o.value === cur.value;
+    // Нет в наличии / недоступно — приглушено и с заметной меткой
+    const meta = o.disabled
+      ? `<span class="dd__meta dd__meta--off">${icon('ban')}${esc(o.meta)}</span>`
+      : o.meta
+        ? `<span class="dd__meta">${esc(o.meta)}</span>`
+        : '';
     return `<li class="dd__option" role="option" id="${id}-opt-${o.value}" data-value="${o.value}" aria-selected="${sel}"${o.disabled ? ' aria-disabled="true"' : ''}>
       ${o.flag ? `<span class="flag" style="background:${o.flag}" aria-hidden="true"></span>` : ''}
       <span class="dd__opt-label">${esc(o.label)}</span>
-      ${o.meta ? `<span class="dd__meta">${esc(o.meta)}</span>` : ''}
+      ${meta}
       ${sel ? `<span class="dd__check" aria-hidden="true">${icon('check')}</span>` : ''}
     </li>`;
   };
@@ -496,7 +500,7 @@ function renderDropdown(field, { id, label, options, value, onChange }) {
       <span class="quickbuy__label" id="${id}-label">${esc(label)}</span>
       <button type="button" class="dd__button" id="${id}-btn" aria-haspopup="listbox" aria-expanded="false" aria-controls="${id}-list" aria-labelledby="${id}-label ${id}-btn">
         ${cur.flag ? `<span class="flag" style="background:${cur.flag}" aria-hidden="true"></span>` : ''}
-        <span class="dd__value">${esc(cur.label)}</span>
+        <span class="dd__value">${esc(cur.display ?? cur.label)}</span>
         <span class="dd__chevron" aria-hidden="true">${icon('chevron')}</span>
       </button>
       <div class="dd__popup" id="${id}-popup" hidden>
@@ -557,7 +561,9 @@ function fitPopup(dd) {
   const natural = list.scrollHeight + chrome;
   const below = bounds.bottom - field.bottom - GAP - MARGIN;
   const above = field.top - bounds.top - GAP - MARGIN;
-  const up = natural > below && above > below;
+  // Вниз — по умолчанию: вверх только когда снизу не помещается даже короткий список
+  const MIN_DOWN = 200;
+  const up = natural > below && below < MIN_DOWN && above > below;
   popup.classList.toggle('dd__popup--up', up);
   const room = up ? above : below;
   if (natural > room) list.style.maxHeight = `${Math.max(room - chrome, 120)}px`;
@@ -689,7 +695,34 @@ function renderQuickbuy() {
     });
   }
 
-  // Третье поле — срок аренды (для лицензии — срок подписки)
+  // Оператор и город — отдельное поле; у IPv4 их нет, у лицензии поле скрыто
+  const opField = $('#qb-op-field');
+  opField.hidden = farm;
+  const opCountry = countryById[state.country];
+  if (!farm && isMobileType() && opCountry.operators) {
+    const opOptions = opCountry.operators.flatMap((o) => [
+      { group: o.name },
+      ...o.cities.map((c) => ({ value: `${o.name}|${c.name}`, label: c.name, display: `${o.name}, ${c.name}`, meta: `сигнал ${c.signal}%` })),
+    ]);
+    renderDropdown(opField, {
+      id: 'qb-op',
+      label: 'Оператор и город',
+      options: opOptions,
+      value: `${state.operator}|${state.city}`,
+      onChange: (v) => {
+        const [op, city] = v.split('|');
+        state.operator = op;
+        state.city = city;
+        updateConfig();
+      },
+    });
+  } else if (!farm) {
+    opField.innerHTML = `
+      <span class="quickbuy__label">Оператор и город</span>
+      <span class="qb-static">Не требуется для IPv4</span>`;
+  }
+
+  // Срок аренды (для лицензии — срок подписки)
   const periodOptions = farm
     ? data.farm.plans.map((p) => ({
         value: p.id,
@@ -721,7 +754,7 @@ function renderQuickbuy() {
     },
   });
 
-  // Общая стоимость: сумма, цена за единицу, количество и «Ещё параметры»
+  // Общая стоимость: сумма, цена за единицу и количество. Купон вводится при оформлении
   const extra = $('#qb-extra');
   $('#qb-total-label').textContent = 'Общая стоимость:';
   if (farm) {
@@ -737,15 +770,9 @@ function renderQuickbuy() {
     $('#qb-total').textContent = rub(r.total);
     $('#qb-old').textContent = r.discount ? rub(r.subtotal) : '';
     $('#qb-unit').textContent = state.qty > 1 ? `(${state.qty} × ${rub(r.unit)})` : `(${rub(r.unit)} за шт.)`;
-    const summary = [state.operator && `${state.operator}, ${state.city}`, r.check.ok && `купон ${r.check.promo.code}`].filter(Boolean).join(' · ');
     extra.innerHTML = `
       ${stepperHtml('qty', state.qty, max, null, 'Количество, шт.')}
-      <span class="qb-qty-unit">шт.</span>
-      <button type="button" class="qb-more" data-open-params aria-haspopup="dialog">
-        <span class="qb-more__full">${isMobileType() ? 'Оператор, город, купон' : 'Купон'}</span>
-        <span class="qb-more__short" aria-hidden="true">Ещё параметры</span>
-        ${summary ? `<span class="qb-more__value">${esc(summary)}</span>` : ''}
-      </button>`;
+      <span class="qb-qty-unit">шт.${r.check.ok ? ` · купон ${esc(r.check.promo.code)}` : ''}</span>`;
     $('#qb-buy').textContent = 'Купить прокси';
   }
 }
@@ -770,92 +797,6 @@ function setStep(kind, value) {
   }
 }
 
-/* ==========================================================================
-   «Ещё параметры»: оператор, город и купон — прямо на первом экране
-   ========================================================================== */
-function renderParams() {
-  const box = $('#params-body');
-  const a = document.activeElement;
-  const restore = a && box.contains(a) && a.name ? `[name="${a.name}"][value="${CSS.escape(a.value)}"]` : null;
-  const country = countryById[state.country];
-  let html = '';
-  if (isMobileType() && country.operators) {
-    const op = country.operators.find((o) => o.name === state.operator);
-    html += `
-      <fieldset class="field">
-        <legend class="field__label">Оператор</legend>
-        <div class="choices">${country.operators
-          .map(
-            (o) => `<label class="choice"><input type="radio" name="p-operator" value="${esc(o.name)}"${o.name === state.operator ? ' checked' : ''}>
-              <span class="choice__body">${esc(o.name)}</span></label>`,
-          )
-          .join('')}</div>
-      </fieldset>
-      <fieldset class="field">
-        <legend class="field__label">Город и качество сигнала${tip('signal')}</legend>
-        <div class="cities">${op.cities
-          .map(
-            (c) => `<label class="city"><input type="radio" name="p-city" value="${esc(c.name)}"${c.name === state.city ? ' checked' : ''}>
-              <span class="city__body"><span class="city__name">${esc(c.name)}</span>
-              <span class="city__signal">${c.signal}%<span class="sr-only"> качество сигнала</span></span>
-              <span class="signal-bar${c.signal < 80 ? ' is-mid' : ''}" aria-hidden="true"><span style="width:${c.signal}%"></span></span></span></label>`,
-          )
-          .join('')}</div>
-      </fieldset>`;
-  }
-  const r = calc();
-  html += `
-    <div class="field">
-      <label class="field__label" for="p-coupon">Купон</label>
-      <div class="coupon__row">
-        <input class="input" id="p-coupon" autocomplete="off" spellcheck="false" placeholder="Например, FRIGATE10" value="${esc(state.coupon)}">
-        <button type="button" class="btn btn--outline btn--sm" id="p-coupon-apply">Применить</button>
-      </div>
-      <p class="coupon__msg${r.check.empty ? '' : ` is-${r.check.level}`}" aria-live="polite">${
-        r.check.empty ? '' : esc(r.check.ok ? `${r.check.msg} (−${rub(r.discount)})` : r.check.msg)
-      }</p>
-    </div>`;
-  box.innerHTML = html;
-  $('#params-done').textContent = `Готово · ${rub(r.total)}`;
-  if (restore) box.querySelector(restore)?.focus({ preventScroll: true });
-}
-
-function openParams() {
-  renderParams();
-  openDialog($('#params-dialog'));
-}
-
-function bindParams() {
-  const box = $('#params-body');
-  box.addEventListener('change', (e) => {
-    const el = e.target;
-    if (el.name === 'p-operator') {
-      const op = countryById[state.country].operators.find((o) => o.name === el.value);
-      state.operator = op.name;
-      state.city = bestCity(op).name;
-    } else if (el.name === 'p-city') state.city = el.value;
-    else return;
-    updateConfig();
-    renderParams();
-  });
-  const applyCoupon = () => {
-    state.coupon = $('#p-coupon').value.trim().toUpperCase();
-    $('#coupon-input').value = state.coupon;
-    updateConfig();
-    renderParams();
-    $('#p-coupon').focus();
-  };
-  box.addEventListener('click', (e) => {
-    if (e.target.closest('#p-coupon-apply')) applyCoupon();
-  });
-  box.addEventListener('keydown', (e) => {
-    if (e.target.id === 'p-coupon' && e.key === 'Enter') {
-      e.preventDefault();
-      applyCoupon();
-    }
-  });
-}
-
 function farmItem() {
   const r = farmCalc();
   return { kind: FARM, modems: farmState.modems, plan: r.plan.id, qty: farmState.modems, subtotal: r.subtotal, discount: r.discount, total: r.total };
@@ -868,7 +809,6 @@ function bindQuickbuy() {
     if (kind) setStep(kind, parseInt(e.target.value, 10));
   });
   form.addEventListener('click', (e) => {
-    if (e.target.closest('[data-open-params]')) return openParams();
     const b = e.target.closest('[data-step]');
     if (!b) return;
     const kind = b.dataset.step;
@@ -2027,6 +1967,8 @@ function initHeroCanvas() {
     visible = en.isIntersecting;
     sync();
   }).observe(hero);
+  // Пока низ первого экрана на виду — кнопка чата на mobile уезжает, чтобы не закрывать ссылки
+  new IntersectionObserver(([en]) => document.body.classList.toggle('hero-in-view', en.isIntersecting)).observe($('.hero__bottom'));
   document.addEventListener('visibilitychange', sync);
   reducedMotion.addEventListener('change', () => {
     resize();
@@ -2054,7 +1996,6 @@ hydrateIcons();
 bindHeader();
 bindQuickbuy();
 bindDropdowns();
-bindParams();
 bindFeatures();
 bindProduct();
 initHeroCanvas();

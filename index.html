@@ -93,6 +93,7 @@
           <form class="quickbuy" id="quickbuy" aria-label="Быстрый заказ прокси">
             <div class="quickbuy__field" id="qb-type-field"></div>
             <div class="quickbuy__field" id="qb-second-field"></div>
+            <div class="quickbuy__field" id="qb-op-field"></div>
             <div class="quickbuy__field" id="qb-third-field"></div>
             <div class="quickbuy__total">
               <span class="quickbuy__label" id="qb-total-label">Итого</span>
@@ -101,14 +102,15 @@
             </div>
             <button type="submit" class="btn btn--primary btn--xl quickbuy__buy" id="qb-buy">Купить прокси</button>
           </form>
+        </div>
 
-          <p class="hero__links">
-            <a class="hero__link" href="#picker">Не знаете, что выбрать? Подбор по задаче</a>
-            <button type="button" class="hero__link" data-open-test>Получить бесплатный тест</button>
-            <a class="hero__link" href="#" data-stub="Telegram-бот">Купить в Telegram-боте</a>
-          </p>
-
-          <ul class="hero__checks" id="hero-checks"></ul>
+        <!-- Нижняя полоса первого экрана на градиенте: подбор, тест, бот -->
+        <div class="hero__bottom">
+          <nav class="container hero__links" aria-label="Другие способы начать">
+            <a class="hero__link" href="#picker"><span data-icon="seo"></span><span class="hero__link-full">Не знаете, что выбрать? Подбор по задаче</span><span class="hero__link-short" aria-hidden="true">Подбор по задаче</span></a>
+            <button type="button" class="hero__link" data-open-test><span data-icon="gift"></span><span class="hero__link-full">Получить бесплатный тест</span><span class="hero__link-short" aria-hidden="true">Бесплатный тест</span></button>
+            <a class="hero__link" href="#" data-stub="Telegram-бот"><span data-icon="telegram"></span><span class="hero__link-full">Купить в Telegram-боте</span><span class="hero__link-short" aria-hidden="true">Telegram-бот</span></a>
+          </nav>
         </div>
       </section>
 
@@ -588,22 +590,6 @@
           <button type="button" class="icon-btn icon-btn--plain" data-close aria-label="Закрыть"><span data-icon="close"></span></button>
         </header>
         <div class="modal__body" id="cart-body"></div>
-      </div>
-    </dialog>
-
-    <!-- Окно «Ещё параметры» первого экрана -->
-    <dialog class="modal" id="params-dialog" aria-labelledby="params-title">
-      <div class="modal__inner">
-        <header class="modal__head">
-          <h2 class="modal__title" id="params-title">Параметры заказа</h2>
-          <button type="button" class="icon-btn icon-btn--plain" data-close aria-label="Закрыть"><span data-icon="close"></span></button>
-        </header>
-        <div class="modal__body">
-          <div id="params-body"></div>
-          <div class="modal__footer">
-            <button type="button" class="btn btn--primary btn--xl btn--block" id="params-done" data-close>Готово</button>
-          </div>
-        </div>
       </div>
     </dialog>
 
