@@ -6219,3 +6219,41 @@ body.dd-open {
     align-self: stretch;
   }
 }
+
+/* Ширина карточек меняется мгновенно — стрелки всегда точно под первой свёрнутой */
+@media (min-width: 960px) {
+  .feature {
+    transition: background-color 0.3s ease;
+  }
+
+  .feature.is-active .feature__head,
+  .feature.is-active .feature__body {
+    animation: reco-in 0.35s ease;
+  }
+}
+
+/* «Получить тест» в карточке — белая кнопка на зелёном */
+.feature__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch);
+  margin-top: 20px;
+  padding: 0 22px;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--c-primary-ink);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+
+.feature__link:hover {
+  background: var(--c-accent-light);
+  color: var(--c-primary-ink);
+}
+
+.feature__link:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}

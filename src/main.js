@@ -1690,6 +1690,19 @@ function setFeature(i) {
     f.style.order = String(pos);
     $('.feature__head', f).setAttribute('aria-expanded', String(on));
   });
+  placeFeatureNav();
+}
+
+/* Стрелки (ПК): под первой свёрнутой карточкой, нижний край — вровень с активной */
+function placeFeatureNav() {
+  const nav = $('#feat-prev').parentElement;
+  const wrap = nav.parentElement;
+  const next = $$('.feature:not(.is-active):not(.is-off)').sort((a, b) => Number(a.style.order) - Number(b.style.order))[0];
+  const act = $('.feature.is-active');
+  if (!next || !act || getComputedStyle(nav).position !== 'absolute') return;
+  const w = wrap.getBoundingClientRect();
+  nav.style.left = `${next.getBoundingClientRect().left - w.left}px`;
+  nav.style.top = `${act.getBoundingClientRect().bottom - w.top - nav.offsetHeight}px`;
 }
 
 function scheduleFeature() {
@@ -1709,6 +1722,8 @@ function bindFeatures() {
     setFeature(Number(head.closest('.feature').dataset.feat));
     scheduleFeature();
   });
+  window.addEventListener('resize', placeFeatureNav);
+  document.fonts?.ready.then(placeFeatureNav);
   $('#feat-prev').addEventListener('click', () => {
     setFeature(featIndex - 1);
     scheduleFeature();
