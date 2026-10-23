@@ -5982,3 +5982,178 @@ body.dd-open {
     right: -1px;
   }
 }
+
+/* ==========================================================================
+   «Почему Frigate Proxy» (ПК): окно из 3 карточек с воздухом и стрелки
+   с мягкой заливкой, как у proxy-seller. Mobile не меняется.
+   ========================================================================== */
+@media (max-width: 959px) {
+  .feature {
+    order: 0 !important;
+  }
+
+  .feature__art {
+    display: none;
+  }
+
+  .features__nav {
+    display: none !important;
+  }
+}
+
+@media (min-width: 960px) {
+  .features-wrap {
+    position: relative;
+    max-width: 1080px;
+    margin: 0 auto;
+    --feat-gap: 14px;
+    --feat-low: 200px;
+    --feat-high: 320px;
+  }
+
+  .features,
+  .features:is(*) {
+    align-items: flex-start;
+    gap: var(--feat-gap);
+    height: auto;
+  }
+
+  .feature.is-off {
+    display: none;
+  }
+
+  .feature,
+  .feature:not(.is-active) {
+    flex: 1 1 0;
+    height: var(--feat-low);
+  }
+
+  .feature.is-active {
+    flex: 2.1 1 0;
+    height: var(--feat-high);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 46%;
+    grid-template-rows: auto 1fr;
+  }
+
+  /* Свёрнутые: номер сверху, полное название снизу */
+  .feature:not(.is-active) .feature__head {
+    height: 100%;
+    padding: 26px 24px;
+  }
+
+  .feature .feature__title--full,
+  .feature:not(.is-active) .feature__title--full {
+    display: block;
+    font-size: 17px;
+    line-height: 1.3;
+  }
+
+  .feature .feature__title--short {
+    display: none !important;
+  }
+
+  /* Активная: текст слева с воздухом, сцена справа */
+  .feature.is-active .feature__head {
+    grid-column: 1;
+    grid-row: 1;
+    padding: 36px 8px 0 36px;
+  }
+
+  .feature.is-active .feature__title--full {
+    font-size: 27px;
+    line-height: 1.2;
+  }
+
+  .feature.is-active .feature__body {
+    grid-column: 1;
+    grid-row: 2;
+    display: block;
+    align-self: end;
+    padding: 0 8px 34px 36px;
+  }
+
+  .feature.is-active .feature__body p {
+    max-width: 30ch;
+    font-size: 16px;
+  }
+
+  .feature:not(.is-active) .feature__art {
+    display: none;
+  }
+
+  .feature.is-active .feature__art {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    margin: 18px 18px 18px 0;
+  }
+
+  /* Стрелки — под свёрнутыми карточками, мягкая заливка без обводки */
+  .features__nav {
+    position: absolute;
+    top: calc(var(--feat-low) + 16px);
+    left: calc((100% - 2 * var(--feat-gap)) * 2.1 / 4.1 + var(--feat-gap));
+    display: flex;
+    gap: 10px;
+    margin: 0;
+  }
+
+  .features__cta-row {
+    margin-top: 36px;
+  }
+}
+
+.feat-arrow {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 0;
+  border-radius: 12px;
+  background: #eef1ec;
+  color: var(--c-text);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.feat-arrow:hover {
+  background: #e2e7df;
+}
+
+.feat-arrow svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Активная карточка без сцены: заголовок сверху, текст снизу, много воздуха */
+@media (min-width: 960px) {
+  .feature.is-active {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .feature.is-active .feature__head {
+    padding: 40px 44px 0;
+    gap: 14px;
+  }
+
+  .feature.is-active .feature__body {
+    padding: 0 44px 40px;
+  }
+
+  .feature.is-active .feature__body p {
+    max-width: 38ch;
+    font-size: 17px;
+    line-height: 1.55;
+  }
+
+  .feature__num {
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .feature:not(.is-active) .feature__title--full {
+    font-weight: 600;
+  }
+}

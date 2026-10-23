@@ -1651,12 +1651,14 @@ function bindGlobal() {
 }
 
 /* ==========================================================================
-   Преимущества: карточки-аккордеон с автопереключением
+   Преимущества: окно из 3 карточек (ПК) — широкая активная и две следующие.
+   На mobile — вертикальный аккордеон
    ========================================================================== */
 let featIndex = 0;
 let featTimer = 0;
 let featPaused = false;
 let featVisible = false;
+const FEAT_WINDOW = 3;
 
 function renderFeatures() {
   $('#features').innerHTML = data.benefits
@@ -1680,8 +1682,11 @@ function setFeature(i) {
   const n = data.benefits.length;
   featIndex = (i + n) % n;
   $$('.feature').forEach((f, k) => {
-    const on = k === featIndex;
+    const pos = (k - featIndex + n) % n; // 0 — активная, 1–2 — следующие в окне
+    const on = pos === 0;
     f.classList.toggle('is-active', on);
+    f.classList.toggle('is-off', pos >= FEAT_WINDOW);
+    f.style.order = String(pos);
     $('.feature__head', f).setAttribute('aria-expanded', String(on));
   });
 }
@@ -1692,7 +1697,7 @@ function scheduleFeature() {
   featTimer = setTimeout(() => {
     setFeature(featIndex + 1);
     scheduleFeature();
-  }, 6000);
+  }, 6500);
 }
 
 function bindFeatures() {
