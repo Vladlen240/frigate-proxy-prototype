@@ -472,44 +472,260 @@ function updateConfig({ tabs = false } = {}) {
   renderQuickbuy();
 }
 
-/* Быстрый заказ на первом экране — та же модель состояния, что у конфигуратора */
+/* ==========================================================================
+   Выпадающий список: на ПК — панель под полем, на mobile — шторка снизу.
+   Паттерн listbox: стрелки, Home/End, Enter/Пробел, Esc.
+   ========================================================================== */
+const dropdowns = {};
+
+function renderDropdown(field, { id, label, options, value, onChange }) {
+  dropdowns[id] = { options, onChange };
+  const cur = options.find((o) => o.value === value) ?? options[0];
+  const opt = (o) => {
+    if (o.group) return `<li class="dd__group" role="presentation">${esc(o.group)}</li>`;
+    const sel = o.value === cur.value;
+    return `<li class="dd__option" role="option" id="${id}-opt-${o.value}" data-value="${o.value}" aria-selected="${sel}"${o.disabled ? ' aria-disabled="true"' : ''}>
+      ${o.flag ? `<span class="flag" style="background:${o.flag}" aria-hidden="true"></span>` : ''}
+      <span class="dd__opt-label">${esc(o.label)}</span>
+      ${o.meta ? `<span class="dd__meta">${esc(o.meta)}</span>` : ''}
+      ${sel ? `<span class="dd__check" aria-hidden="true">${icon('check')}</span>` : ''}
+    </li>`;
+  };
+  field.innerHTML = `
+    <div class="dd" data-dd="${id}">
+      <span class="quickbuy__label" id="${id}-label">${esc(label)}</span>
+      <button type="button" class="dd__button" id="${id}-btn" aria-haspopup="listbox" aria-expanded="false" aria-controls="${id}-list" aria-labelledby="${id}-label ${id}-btn">
+        ${cur.flag ? `<span class="flag" style="background:${cur.flag}" aria-hidden="true"></span>` : ''}
+        <span class="dd__value">${esc(cur.label)}</span>
+        <span class="dd__chevron" aria-hidden="true">${icon('chevron')}</span>
+      </button>
+      <div class="dd__popup" id="${id}-popup" hidden>
+        <div class="dd__sheet-head"><span>${esc(label)}</span>
+          <button type="button" class="icon-btn icon-btn--plain dd__close" aria-label="Закрыть">${icon('close')}</button></div>
+        <ul class="dd__list" role="listbox" id="${id}-list" tabindex="-1" aria-labelledby="${id}-label">${options.map(opt).join('')}</ul>
+      </div>
+    </div>`;
+}
+
+let openDd = null;
+
+function ddEnabled(dd) {
+  return $$('.dd__option:not([aria-disabled="true"])', dd);
+}
+
+function setActive(dd, li) {
+  const list = $('.dd__list', dd);
+  $$('.dd__option.is-active', dd).forEach((x) => x.classList.remove('is-active'));
+  if (!li) return;
+  li.classList.add('is-active');
+  list.setAttribute('aria-activedescendant', li.id);
+  li.scrollIntoView({ block: 'nearest' });
+}
+
+function openDropdown(dd) {
+  if (openDd && openDd !== dd) closeDropdown(false);
+  openDd = dd;
+  const popup = $('.dd__popup', dd);
+  popup.hidden = false;
+  $('.dd__button', dd).setAttribute('aria-expanded', 'true');
+  if (mqSmall.matches) {
+    $('#dd-backdrop').hidden = false;
+    document.body.classList.add('dd-open');
+  }
+  const list = $('.dd__list', dd);
+  setActive(dd, $('.dd__option[aria-selected="true"]', dd) || ddEnabled(dd)[0]);
+  list.focus({ preventScroll: true });
+}
+
+function closeDropdown(focusButton = true) {
+  if (!openDd) return;
+  const dd = openDd;
+  openDd = null;
+  $('.dd__popup', dd).hidden = true;
+  $('.dd__button', dd).setAttribute('aria-expanded', 'false');
+  $('#dd-backdrop').hidden = true;
+  document.body.classList.remove('dd-open');
+  if (focusButton) $('.dd__button', dd).focus({ preventScroll: true });
+}
+
+function chooseOption(dd, li) {
+  if (!li || li.getAttribute('aria-disabled') === 'true') return;
+  const id = dd.dataset.dd;
+  closeDropdown(false);
+  dropdowns[id].onChange(li.dataset.value);
+  // Поле перерисовалось — возвращаем фокус на новую кнопку
+  $(`#${id}-btn`)?.focus({ preventScroll: true });
+}
+
+function bindDropdowns() {
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.dd__button');
+    if (btn) {
+      const dd = btn.closest('.dd');
+      if (openDd === dd) closeDropdown();
+      else openDropdown(dd);
+      return;
+    }
+    const li = e.target.closest('.dd__option');
+    if (li) return chooseOption(li.closest('.dd'), li);
+    if (e.target.closest('.dd__close') || e.target.id === 'dd-backdrop') return closeDropdown();
+    if (openDd && !e.target.closest('.dd')) closeDropdown(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    const btn = e.target.closest?.('.dd__button');
+    if (btn && ['ArrowDown', 'ArrowUp'].includes(e.key)) {
+      e.preventDefault();
+      openDropdown(btn.closest('.dd'));
+      return;
+    }
+    if (!openDd || !e.target.closest?.('.dd__list')) return;
+    const items = ddEnabled(openDd);
+    const active = $('.dd__option.is-active', openDd);
+    let i = items.indexOf(active);
+    if (e.key === 'ArrowDown') i = Math.min(i + 1, items.length - 1);
+    else if (e.key === 'ArrowUp') i = Math.max(i - 1, 0);
+    else if (e.key === 'Home') i = 0;
+    else if (e.key === 'End') i = items.length - 1;
+    else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      return chooseOption(openDd, active);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      return closeDropdown();
+    } else if (e.key === 'Tab') return closeDropdown(false);
+    else return;
+    e.preventDefault();
+    setActive(openDd, items[i]);
+  });
+  mqSmall.addEventListener('change', () => closeDropdown(false));
+}
+
+/* ==========================================================================
+   Быстрый заказ на первом экране.
+   Прокси — та же модель состояния, что у конфигуратора; лицензия ProxyFarm — свой мини-расчёт.
+   ========================================================================== */
+const FARM = 'farm';
+const farmState = { modems: 1, plan: data.farm.plans[0].id };
+let qbMode = 'proxy';
+
+function farmCalc() {
+  const plan = data.farm.plans.find((p) => p.id === farmState.plan);
+  const subtotal = data.farm.pricePerModem * farmState.modems * plan.months;
+  const discount = Math.round((subtotal * (plan.discount ?? 0)) / 100);
+  return { plan, subtotal, discount, total: subtotal - discount };
+}
+
 function renderQuickbuy() {
-  const t = state.type;
-  $('#qb-type').innerHTML = types
-    .map((x) => `<option value="${x.id}"${x.id === t ? ' selected' : ''}>${esc(x.name)}</option>`)
-    .join('');
-  $('#qb-country').innerHTML = countriesFor(t)
-    .map((c) => {
-      const st = stockOf(c, t);
-      return `<option value="${c.id}"${c.id === state.country ? ' selected' : ''}${st === 0 ? ' disabled' : ''}>${esc(c.name)} · ${st === 0 ? 'нет в наличии' : st}</option>`;
-    })
-    .join('');
-  $('#qb-period').innerHTML = data.periods
-    .map((p) => {
-      const price = unitPrice(t, state.country, p.id);
-      const off = price == null;
-      return `<option value="${p.id}"${p.id === state.period ? ' selected' : ''}${off ? ' disabled' : ''}>${p.label} · ${off ? 'недоступно' : rub(price)}</option>`;
-    })
-    .join('');
-  const r = calc();
-  $('#qb-total-label').textContent = `Итого за ${state.qty} шт.`;
-  $('#qb-total').textContent = rub(r.total);
-  $('#qb-old').textContent = r.discount ? rub(r.subtotal) : '';
+  const farm = qbMode === FARM;
+  const typeOptions = [
+    { group: 'Прокси' },
+    ...types.map((x) => ({ value: x.id, label: x.name, meta: `от ${rub(priceFrom(x.id))}` })),
+    { group: 'Софт для прокси-ферм' },
+    { value: FARM, label: data.farm.name, meta: `${rub(data.farm.pricePerModem)}/модем` },
+  ];
+  renderDropdown($('#qb-type-field'), {
+    id: 'qb-type',
+    label: 'Тариф',
+    options: typeOptions,
+    value: farm ? FARM : state.type,
+    onChange: (v) => {
+      if (v === FARM) qbMode = FARM;
+      else {
+        qbMode = 'proxy';
+        selectType(v);
+        updateConfig({ tabs: true });
+      }
+      renderQuickbuy();
+    },
+  });
+
+  // Второе поле — срок аренды (для лицензии ProxyFarm — срок подписки)
+  const periodOptions = farm
+    ? data.farm.plans.map((p) => ({
+        value: p.id,
+        label: p.label,
+        meta: `${rub(data.farm.pricePerModem * p.months * (1 - (p.discount ?? 0) / 100))}${p.discount ? ` · −${p.discount}%` : ''}`,
+      }))
+    : data.periods.map((p) => {
+        const price = unitPrice(state.type, state.country, p.id);
+        return {
+          value: p.id,
+          label: p.label,
+          meta: price == null ? 'недоступно' : `${rub(price)}${p.best ? ' · выгоднее' : ''}`,
+          disabled: price == null,
+        };
+      });
+  renderDropdown($('#qb-second-field'), {
+    id: 'qb-period',
+    label: 'Срок аренды',
+    options: periodOptions,
+    value: farm ? farmState.plan : state.period,
+    onChange: (v) => {
+      if (qbMode === FARM) {
+        farmState.plan = v;
+        renderQuickbuy();
+      } else {
+        state.period = v;
+        updateConfig();
+      }
+    },
+  });
+
+  // Итог: сумма, цена за единицу и что ещё можно поменять
+  const extra = $('#qb-extra');
+  $('#qb-total-label').textContent = 'Общая стоимость:';
+  if (farm) {
+    const r = farmCalc();
+    $('#qb-total').textContent = rub(r.total);
+    $('#qb-old').textContent = r.discount ? rub(r.subtotal) : '';
+    $('#qb-unit').textContent = `(${rub(data.farm.pricePerModem)} за модем в месяц)`;
+    extra.innerHTML = `
+      <span class="qb-stepper" role="group" aria-label="Количество модемов">
+        <button type="button" data-modems="-1" aria-label="Меньше модемов"${farmState.modems <= 1 ? ' disabled' : ''}>−</button>
+        <input type="number" id="qb-modems" min="1" max="${data.farm.maxModems}" value="${farmState.modems}" inputmode="numeric" aria-label="Модемов">
+        <button type="button" data-modems="1" aria-label="Больше модемов">+</button>
+      </span>
+      <span>${plural(farmState.modems, ['модем', 'модема', 'модемов'])}</span>`;
+    $('#qb-buy').textContent = 'Купить лицензию';
+  } else {
+    const r = calc();
+    const c = countryById[state.country];
+    $('#qb-total').textContent = rub(r.total);
+    $('#qb-old').textContent = r.discount ? rub(r.subtotal) : '';
+    $('#qb-unit').textContent = state.qty > 1 ? `(${state.qty} × ${rub(r.unit)})` : `(${rub(r.unit)} за шт.)`;
+    extra.innerHTML = `<span class="flag" style="background:${c.flag}" aria-hidden="true"></span>${esc(c.name)}${
+      state.city ? `, ${esc(state.city)}` : ''
+    } · <a href="#buy">изменить</a>`;
+    $('#qb-buy').textContent = 'Купить прокси';
+  }
+}
+
+function farmItem() {
+  const r = farmCalc();
+  return { kind: FARM, modems: farmState.modems, plan: r.plan.id, qty: farmState.modems, subtotal: r.subtotal, discount: r.discount, total: r.total };
 }
 
 function bindQuickbuy() {
   const form = $('#quickbuy');
   form.addEventListener('change', (e) => {
     const el = e.target;
-    if (el.id === 'qb-type') selectType(el.value);
-    else if (el.id === 'qb-country') selectCountry(countryById[el.value]);
-    else if (el.id === 'qb-period') state.period = el.value;
-    else return;
-    updateConfig({ tabs: true });
+    if (el.id === 'qb-modems') {
+      farmState.modems = clamp(parseInt(el.value, 10) || 1, 1, data.farm.maxModems);
+    } else return;
+    renderQuickbuy();
+  });
+  form.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-modems]');
+    if (!b) return;
+    farmState.modems = clamp(farmState.modems + Number(b.dataset.modems), 1, data.farm.maxModems);
+    renderQuickbuy();
+    $(`[data-modems="${b.dataset.modems}"]`)?.focus({ preventScroll: true });
   });
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    openCheckout([itemFromState()], 'config');
+    if (qbMode === FARM) openCheckout([farmItem()], 'farm');
+    else openCheckout([itemFromState()], 'config');
   });
 }
 
@@ -661,8 +877,12 @@ function itemFromState() {
   };
 }
 
+const itemTitle = (it) => (it.kind === FARM ? data.farm.name : typeById[it.type].name);
+
 const itemMeta = (it) =>
-  [
+  it.kind === FARM
+    ? `${it.modems} ${plural(it.modems, ['модем', 'модема', 'модемов'])} · ${data.farm.plans.find((p) => p.id === it.plan).label}`
+    : [
     countryById[it.country].name,
     it.city ? `${it.operator}, ${it.city}` : null,
     periodById[it.period].label,
@@ -703,7 +923,7 @@ function renderCart() {
     ${cart
       .map(
         (it, i) => `<div class="cart-item">
-          <div><div>${esc(typeById[it.type].name)}</div><div class="order-item__meta">${esc(itemMeta(it))}</div></div>
+          <div><div>${esc(itemTitle(it))}</div><div class="order-item__meta">${esc(itemMeta(it))}</div></div>
           <div class="order-item__price">${itemPrice(it)}</div>
           <button type="button" class="linklike cart-item__remove" data-cart-remove="${i}">Удалить</button>
         </div>`,
@@ -716,22 +936,54 @@ function renderCart() {
 let checkoutSource = null;
 let checkoutItems = [];
 
-function openCheckout(items, source) {
-  checkoutItems = items;
-  checkoutSource = source;
-  const total = items.reduce((s, it) => s + it.total, 0);
+function renderCheckoutItems() {
+  const total = checkoutItems.reduce((s, it) => s + it.total, 0);
   $('#checkout-items').innerHTML =
-    items
+    checkoutItems
       .map(
         (it) => `<div class="order-item">
-          <div><div>${esc(typeById[it.type].name)}</div><div class="order-item__meta">${esc(itemMeta(it))}</div></div>
+          <div><div>${esc(itemTitle(it))}</div><div class="order-item__meta">${esc(itemMeta(it))}</div></div>
           <div class="order-item__price">${itemPrice(it)}</div></div>`,
       )
       .join('') + `<div class="order-total"><span>К оплате</span><span>${rub(total)}</span></div>`;
   $('#checkout-pay').textContent = `Оплатить ${rub(total)}`;
+}
+
+function openCheckout(items, source) {
+  checkoutItems = items;
+  checkoutSource = source;
+  renderCheckoutItems();
   resetForm('#checkout-form', '#checkout-success');
+  // Купон в оформлении — только для заказа прокси из конфигуратора или первого экрана
+  const coupon = $('#checkout-coupon');
+  coupon.hidden = source !== 'config';
+  coupon.open = Boolean(state.coupon) && source === 'config';
+  $('#checkout-coupon-input').value = state.coupon;
+  showCheckoutCoupon();
   openDialog($('#checkout-dialog'));
-  $('#checkout-email').focus();
+  // На mobile не открываем клавиатуру сразу — сначала человек видит заказ и сумму
+  if (!mqSmall.matches) $('#checkout-email').focus();
+}
+
+function showCheckoutCoupon() {
+  const msg = $('#checkout-coupon-msg');
+  const r = calc();
+  msg.className = 'coupon__msg';
+  if (r.check.empty) msg.textContent = '';
+  else {
+    msg.classList.add(`is-${r.check.level}`);
+    msg.textContent = r.check.ok ? `${r.check.msg} (−${rub(r.discount)})` : r.check.msg;
+  }
+}
+
+function applyCheckoutCoupon() {
+  state.coupon = $('#checkout-coupon-input').value.trim().toUpperCase();
+  $('#checkout-coupon-input').value = state.coupon;
+  $('#coupon-input').value = state.coupon;
+  updateConfig();
+  checkoutItems = [itemFromState()];
+  renderCheckoutItems();
+  showCheckoutCoupon();
 }
 
 function renderPayOptions() {
@@ -771,6 +1023,13 @@ function validateConsent(cb, err) {
 
 function bindCheckout() {
   renderPayOptions();
+  $('#checkout-coupon-apply').addEventListener('click', applyCheckoutCoupon);
+  $('#checkout-coupon-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      applyCheckoutCoupon();
+    }
+  });
   $('#checkout-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const email = $('#checkout-email');
@@ -783,7 +1042,8 @@ function bindCheckout() {
     const pay = $('#pay-options input:checked');
     const payLabel = pay.closest('label').textContent.trim();
     const qty = checkoutItems.reduce((s, it) => s + it.qty, 0);
-    $('#checkout-success-text').textContent = `Доступы к ${qty} ${plural(qty, ['прокси', 'прокси', 'прокси'])} придут на ${email.value.trim()} в течение 5 минут после оплаты (${payLabel}).`;
+    const what = checkoutItems.every((it) => it.kind === FARM) ? 'Ключ лицензии ProxyFarm придёт' : `Доступы к ${qty} прокси придут`;
+    $('#checkout-success-text').textContent = `${what} на ${email.value.trim()} в течение 5 минут после оплаты (${payLabel}).`;
     $('#checkout-form').hidden = true;
     $('#checkout-success').hidden = false;
     $('#checkout-success [data-close]').focus();
@@ -1598,6 +1858,7 @@ hydrateIcons();
 
 bindHeader();
 bindQuickbuy();
+bindDropdowns();
 bindFeatures();
 bindProduct();
 initHeroCanvas();

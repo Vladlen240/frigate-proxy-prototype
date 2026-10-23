@@ -91,24 +91,14 @@
           </p>
 
           <form class="quickbuy" id="quickbuy" aria-label="Быстрый заказ прокси">
-            <div class="quickbuy__field">
-              <label class="quickbuy__label" for="qb-type">Тип прокси</label>
-              <select class="quickbuy__select" id="qb-type"></select>
-            </div>
-            <div class="quickbuy__field">
-              <label class="quickbuy__label" for="qb-country">Страна</label>
-              <select class="quickbuy__select" id="qb-country"></select>
-            </div>
-            <div class="quickbuy__field">
-              <label class="quickbuy__label" for="qb-period">Срок аренды</label>
-              <select class="quickbuy__select" id="qb-period"></select>
-            </div>
+            <div class="quickbuy__field" id="qb-type-field"></div>
+            <div class="quickbuy__field" id="qb-second-field"></div>
             <div class="quickbuy__total">
               <span class="quickbuy__label" id="qb-total-label">Итого</span>
-              <span class="quickbuy__sum"><b id="qb-total"></b> <s id="qb-old"></s></span>
-              <a class="quickbuy__more" href="#buy">Оператор, город, количество, купон →</a>
+              <span class="quickbuy__sum"><b id="qb-total"></b> <s id="qb-old"></s> <span class="quickbuy__unit" id="qb-unit"></span></span>
+              <span class="quickbuy__extra" id="qb-extra"></span>
             </div>
-            <button type="submit" class="btn btn--primary btn--xl quickbuy__buy">Купить прокси</button>
+            <button type="submit" class="btn btn--primary btn--xl quickbuy__buy" id="qb-buy">Купить прокси</button>
           </form>
 
           <p class="hero__links">
@@ -193,7 +183,7 @@
         <div class="container">
           <div class="section__head">
             <h2 id="buy-title">Настройте заказ</h2>
-            <p class="section__lead">Те же параметры, что на первом экране, плюс оператор, город, количество и купон.</p>
+            <p class="section__lead">Тариф и срок — как на первом экране. Здесь можно выбрать страну, оператора, город, количество и ввести купон.</p>
           </div>
 
           <div class="config">
@@ -543,6 +533,7 @@
         </header>
         <form class="modal__body" id="checkout-form" novalidate>
           <div id="checkout-items" class="order-items"></div>
+          <p class="checkout-note">Аккаунт создадим автоматически — доступы придут на e-mail. Уже есть аккаунт? <a class="link" href="#" data-stub="Личный кабинет">Войти</a></p>
 
           <div class="field">
             <label class="field__label" for="checkout-email">E-mail для доступов</label>
@@ -563,8 +554,20 @@
             <p class="field__error" id="checkout-consent-err"></p>
           </div>
 
-          <button type="submit" class="btn btn--primary btn--lg btn--block" id="checkout-pay">Оплатить</button>
-          <p class="modal__fine">Выдача за 5 минут после оплаты. Доступы придут на e-mail и в личный кабинет.</p>
+          <details class="checkout-coupon" id="checkout-coupon">
+            <summary>Есть купон?</summary>
+            <div class="coupon__row">
+              <label class="sr-only" for="checkout-coupon-input">Код купона</label>
+              <input class="input" id="checkout-coupon-input" autocomplete="off" spellcheck="false" placeholder="Например, FRIGATE10" />
+              <button type="button" class="btn btn--outline btn--sm" id="checkout-coupon-apply">Применить</button>
+            </div>
+            <p class="coupon__msg" id="checkout-coupon-msg" aria-live="polite"></p>
+          </details>
+
+          <div class="modal__footer">
+            <button type="submit" class="btn btn--primary btn--xl btn--block" id="checkout-pay">Оплатить</button>
+            <p class="modal__fine">Выдача за 5 минут после оплаты. Доступы придут на e-mail и в личный кабинет.</p>
+          </div>
         </form>
         <div class="modal__body modal__success" id="checkout-success" hidden>
           <span class="success-icon" data-icon="check"></span>
@@ -616,8 +619,10 @@
             </label>
             <p class="field__error" id="test-consent-err"></p>
           </div>
-          <button type="submit" class="btn btn--primary btn--lg btn--block">Получить тестовый прокси</button>
-          <p class="modal__fine" id="test-fine"></p>
+          <div class="modal__footer">
+            <button type="submit" class="btn btn--primary btn--xl btn--block">Получить тестовый прокси</button>
+            <p class="modal__fine" id="test-fine"></p>
+          </div>
         </form>
         <div class="modal__body modal__success" id="test-success" hidden>
           <span class="success-icon" data-icon="check"></span>
@@ -628,6 +633,7 @@
       </div>
     </dialog>
 
+    <div class="dd-backdrop" id="dd-backdrop" hidden></div>
     <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <div class="sr-only" id="sr-status" aria-live="polite"></div>

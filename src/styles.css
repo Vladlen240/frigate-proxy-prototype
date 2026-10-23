@@ -4288,3 +4288,629 @@ body.menu-open {
     font-size: 18px;
   }
 }
+
+/* ==========================================================================
+   v3 — форма первого экрана как у proxy-seller: два поля со списками,
+   «Общая стоимость» и большая кнопка; списки — панель на ПК, шторка на mobile
+   ========================================================================== */
+.hero {
+  z-index: 2;
+  overflow: visible;
+}
+
+.quickbuy {
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  max-width: 1180px;
+}
+
+.quickbuy__field,
+.quickbuy__total {
+  min-height: 112px;
+  padding: 22px 28px;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.07);
+  backdrop-filter: none;
+}
+
+.quickbuy__field:focus-within {
+  outline: none;
+}
+
+.quickbuy__total {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: transparent;
+}
+
+.quickbuy__label {
+  font-size: 14px;
+  color: var(--c-hero-muted);
+}
+
+.quickbuy__sum {
+  margin-top: 6px;
+}
+
+.quickbuy__sum b {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.quickbuy__unit {
+  color: var(--c-hero-muted);
+  font-size: 14px;
+}
+
+.quickbuy__extra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-top: 6px;
+  color: var(--c-hero-muted);
+  font-size: 14px;
+}
+
+.quickbuy__extra a {
+  color: var(--c-accent-light);
+}
+
+.quickbuy .quickbuy__buy {
+  grid-column: auto;
+  min-height: 112px;
+  height: auto;
+  border-radius: 12px;
+  font-size: 26px;
+  font-weight: 600;
+}
+
+/* Мини-степпер модемов в блоке стоимости */
+.qb-stepper {
+  display: inline-flex;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.qb-stepper button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 18px;
+}
+
+.qb-stepper button:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.qb-stepper button:disabled {
+  opacity: 0.35;
+}
+
+.qb-stepper input {
+  width: 48px;
+  border: 0;
+  border-inline: 1px solid rgb(255 255 255 / 0.2);
+  background: transparent;
+  color: #fff;
+  font-weight: 600;
+  text-align: center;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.qb-stepper input::-webkit-outer-spin-button,
+.qb-stepper input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ---------- Выпадающий список ---------- */
+.dd {
+  position: relative;
+}
+
+.quickbuy__field:has(.dd__button[aria-expanded='true']) {
+  border-color: #4cc46a;
+}
+
+.quickbuy__field:has(.dd__button[aria-expanded='true']) .quickbuy__label {
+  color: #7ddc8f;
+}
+
+.dd__button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--touch);
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #fff;
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-align: left;
+}
+
+/* Вся плашка кликабельна */
+.dd__button::after {
+  content: '';
+  position: absolute;
+  inset: -22px -28px;
+}
+
+.dd__value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dd__chevron {
+  flex: none;
+  transition: transform 0.2s;
+}
+
+.dd__chevron svg {
+  width: 22px;
+  height: 22px;
+}
+
+.dd__button[aria-expanded='true'] .dd__chevron {
+  transform: rotate(180deg);
+}
+
+.dd__button:focus-visible {
+  outline: none;
+}
+
+.quickbuy__field:has(.dd__button:focus-visible) {
+  outline: 3px solid var(--c-accent-light);
+  outline-offset: 2px;
+}
+
+.dd__popup {
+  position: absolute;
+  top: calc(100% + 28px);
+  left: -29px;
+  right: -29px;
+  z-index: 30;
+  padding: 10px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 12px;
+  background: #1d2a36;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.4);
+  text-align: left;
+  animation: dd-in 0.16s ease;
+}
+
+@keyframes dd-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.dd__sheet-head {
+  display: none;
+}
+
+.dd__list {
+  max-height: 300px;
+  margin: 0;
+  overflow-y: auto;
+  scrollbar-color: rgb(255 255 255 / 0.4) transparent;
+  scrollbar-width: thin;
+}
+
+.dd__list:focus {
+  outline: none;
+}
+
+.dd__group {
+  padding: 10px 20px 4px;
+  color: rgb(255 255 255 / 0.55);
+  font-size: 13px;
+}
+
+.dd__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.dd__option:hover,
+.dd__option.is-active {
+  background: rgb(255 255 255 / 0.08);
+}
+
+.dd__option[aria-selected='true'] {
+  background: rgb(255 255 255 / 0.12);
+  font-weight: 600;
+}
+
+.dd__list:focus-visible .dd__option.is-active {
+  outline: 2px solid var(--c-accent-light);
+  outline-offset: -2px;
+}
+
+.dd__option[aria-disabled='true'] {
+  color: rgb(255 255 255 / 0.4);
+  cursor: not-allowed;
+}
+
+.dd__option[aria-disabled='true']:hover {
+  background: none;
+}
+
+.dd__opt-label {
+  flex: 1;
+}
+
+.dd__meta {
+  color: rgb(255 255 255 / 0.6);
+  font-size: 14px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.dd__check {
+  color: #7ddc8f;
+}
+
+.dd__check svg {
+  width: 18px;
+  height: 18px;
+}
+
+.dd-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  background: rgb(5 10 18 / 0.6);
+  animation: fade-in 0.2s ease;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+body.dd-open {
+  overflow: hidden;
+}
+
+/* ---------- Mobile: компактная сетка и шторка ---------- */
+@media (max-width: 767px) {
+  .quickbuy {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .quickbuy__field:first-child,
+  .quickbuy .quickbuy__buy {
+    grid-column: span 2;
+  }
+
+  .quickbuy__field,
+  .quickbuy__total {
+    min-height: 0;
+    padding: 14px 16px;
+  }
+
+  .quickbuy__label {
+    font-size: 13px;
+  }
+
+  .dd__button {
+    margin-top: 2px;
+    font-size: 19px;
+  }
+
+  .dd__button::after {
+    inset: -14px -16px;
+  }
+
+  .quickbuy__sum {
+    flex-wrap: wrap;
+    margin-top: 2px;
+    row-gap: 0;
+  }
+
+  .quickbuy__sum b {
+    font-size: 22px;
+  }
+
+  .quickbuy__unit {
+    display: none;
+  }
+
+  .quickbuy__extra {
+    font-size: 13px;
+  }
+
+  .qb-stepper button {
+    width: var(--touch);
+    height: var(--touch);
+  }
+
+  .quickbuy .quickbuy__buy {
+    min-height: 60px;
+    font-size: 20px;
+  }
+
+  .dd__popup {
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 150;
+    max-height: 78dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px calc(12px + env(safe-area-inset-bottom));
+    border: 0;
+    border-radius: 20px 20px 0 0;
+    background: #111b29;
+    animation: sheet-up 0.22s ease;
+  }
+
+  .dd__popup::before {
+    content: '';
+    align-self: center;
+    width: 40px;
+    height: 4px;
+    margin: 2px 0 6px;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.25);
+  }
+
+  .dd__sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 6px 8px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .dd__sheet-head .icon-btn {
+    color: #fff;
+  }
+
+  .dd__list {
+    max-height: none;
+    flex: 1;
+  }
+
+  .dd__option {
+    min-height: 56px;
+    font-size: 17px;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+/* ---------- Окна оформления и теста: на mobile — шторка снизу ---------- */
+.modal__footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin: 22px -20px -20px;
+  padding: 14px 20px calc(16px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--c-border);
+  background: var(--c-surface);
+}
+
+.modal__footer .modal__fine {
+  margin-top: 8px;
+}
+
+.checkout-note {
+  margin-top: 12px;
+  color: var(--c-muted);
+  font-size: 14px;
+}
+
+.checkout-coupon {
+  margin-top: 16px;
+}
+
+.checkout-coupon[hidden] {
+  display: none;
+}
+
+.checkout-coupon > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-sm);
+  color: var(--c-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.checkout-coupon > summary::-webkit-details-marker {
+  display: none;
+}
+
+.checkout-coupon .coupon__row {
+  margin-top: 8px;
+}
+
+@media (max-width: 767px) {
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92dvh;
+    margin: auto 0 0;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .modal[open] {
+    animation: sheet-up 0.25s ease;
+  }
+
+  .modal__inner::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: 8px auto 0;
+    border-radius: 999px;
+    background: var(--c-border-strong);
+  }
+
+  .modal__head {
+    padding-top: 6px;
+  }
+}
+
+/* Mobile: без горизонтальных лент — всё видно сразу сеткой 2×2 */
+@media (max-width: 767px) {
+  .tabs,
+  .ptabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    overflow: visible;
+  }
+
+  .tab,
+  .ptab {
+    white-space: normal;
+  }
+
+  .segs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-inline: 0;
+    padding: 12px 0 0;
+    overflow: visible;
+  }
+
+  .seg {
+    flex: none;
+  }
+
+  /* Отзывы: следующая карточка выглядывает — понятно, что можно листать */
+  .review {
+    flex-basis: 82%;
+  }
+}
+
+/* ---------- Эффект стекла на первом экране ----------
+   Размытие — на псевдоэлементе: backdrop-filter на самой плашке
+   сломал бы позиционирование шторки списка на mobile */
+.quickbuy__field,
+.quickbuy__total {
+  isolation: isolate;
+  border-color: rgb(255 255 255 / 0.14);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.11), rgb(255 255 255 / 0.04));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.12),
+    0 8px 32px rgb(0 0 0 / 0.25);
+}
+
+.quickbuy__field::before,
+.quickbuy__total::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+}
+
+.quickbuy__field:hover {
+  border-color: rgb(255 255 255 / 0.28);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.06));
+}
+
+.hero .btn--primary {
+  position: relative;
+  border-color: rgb(255 255 255 / 0.18);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.22), rgb(255 255 255 / 0) 55%),
+    var(--c-primary);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.35),
+    inset 0 -1px 0 rgb(0 0 0 / 0.15),
+    0 12px 32px rgb(47 124 17 / 0.4);
+}
+
+.hero .btn--primary:hover {
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.28), rgb(255 255 255 / 0.02) 55%),
+    var(--c-primary);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.4),
+    inset 0 -1px 0 rgb(0 0 0 / 0.15),
+    0 14px 40px rgb(47 124 17 / 0.55);
+}
+
+.hero__rating {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.12), rgb(255 255 255 / 0.04));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+@media (min-width: 768px) {
+  .dd__popup {
+    background: rgb(24 36 48 / 0.88);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    backdrop-filter: blur(18px) saturate(1.4);
+  }
+}
+
+/* Открытый список — поверх соседних плашек и кнопки */
+.quickbuy__field:has(.dd__button[aria-expanded='true']) {
+  z-index: 5;
+}
+
+/* Закрытый список не показываем ни при каких раскладках */
+.dd__popup[hidden] {
+  display: none !important;
+}
+
+/* Первый экран не создаёт свой слой: открытая плашка со списком
+   поднимается над соседями (ПК) и над подложкой шторки (mobile) */
+.hero {
+  z-index: auto;
+}
+
+@media (max-width: 767px) {
+  .quickbuy__field:has(.dd__button[aria-expanded='true']) {
+    z-index: 160;
+  }
+}
+
+.dd__sheet-head .icon-btn {
+  background: rgb(255 255 255 / 0.08);
+  color: #fff;
+}
