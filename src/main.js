@@ -151,19 +151,33 @@ const reviewsRounded = `${Math.floor(reviewsTotal / 1000) * 1000}+`;
 
 function renderStatic() {
   $$('[data-pay-icons]').forEach((el) => (el.innerHTML = payIconsHtml()));
-  $('[data-price-from="mobile"]').textContent = rub(kindFrom('mobile'));
-  $('[data-price-from="server"]').textContent = rub(kindFrom('server'));
 
+  // Первый экран: оценка над заголовком и короткие гарантии под формой
+  $('#hero-rating').innerHTML = `<span class="star" aria-hidden="true">★★★★★</span> <b>${ratingStr}</b> · ${reviewsRounded} отзывов`;
+  $('#hero-checks').innerHTML = data.heroChecks.map((c) => `<li><span data-icon="check"></span>${esc(c)}</li>`).join('');
+
+  // Полоса доверия
   const { years, clients, sold } = data.stats;
+  $('#trust-title').textContent = `Нам доверяют ${nf.format(clients)} ${plural(clients, ['клиент', 'клиента', 'клиентов'])}`;
   $('#trust-list').innerHTML = `
     <li class="trust__item">
       <a class="trust__rating" href="#reviews"><span class="star" aria-hidden="true">★</span><b>${ratingStr}</b> · ${reviewsRounded} отзывов</a>
       ${ask('Средняя оценка по площадкам посчитана по примерным данным.')}
     </li>
     <li class="trust__item"><b>${years} лет</b> на рынке</li>
-    <li class="trust__item"><b>${nf.format(clients)}</b> ${plural(clients, ['клиент', 'клиента', 'клиентов'])}</li>
-    <li class="trust__item"><b>${esc(sold)}</b> проданных прокси</li>
-    <li class="trust__item trust__pay"><div class="pay-icons">${payIconsHtml()}</div></li>`;
+    <li class="trust__item"><b>${esc(sold)}</b> проданных прокси</li>`;
+
+  // Бегущая строка: площадки отзывов, оплата и совместимый софт — всё, что уже есть на сайте
+  const ticker = [
+    ...data.reviewPlatforms.map(
+      (p) => `<span class="marquee__logo" style="background:${p.color}" aria-hidden="true">${esc(p.letter)}</span>${esc(p.name)} <b>${p.rating.toFixed(1).replace('.', ',')}</b>`,
+    ),
+    ...data.payments.methods.map((m) => `${icon(m.icon)}${esc(m.full)}`),
+    ...data.worksWith.map((n) => `${icon('check')}${esc(n)}`),
+  ];
+  const items = ticker.map((t) => `<li class="marquee__item">${t}</li>`).join('');
+  // Второй комплект — для бесшовной прокрутки, скрыт от скринридеров
+  $('#works-with').innerHTML = items + items.replace(/<li /g, '<li aria-hidden="true" ');
 
   // Отзывы — сводка
   $('#reviews-lead').textContent = `Средняя оценка ${ratingStr} из 5 — ${nf.format(reviewsTotal)} отзывов на четырёх площадках.`;
@@ -455,6 +469,48 @@ function updateConfig({ tabs = false } = {}) {
   if (tabs) renderTabs();
   renderPanel();
   renderSummary();
+  renderQuickbuy();
+}
+
+/* Быстрый заказ на первом экране — та же модель состояния, что у конфигуратора */
+function renderQuickbuy() {
+  const t = state.type;
+  $('#qb-type').innerHTML = types
+    .map((x) => `<option value="${x.id}"${x.id === t ? ' selected' : ''}>${esc(x.name)}</option>`)
+    .join('');
+  $('#qb-country').innerHTML = countriesFor(t)
+    .map((c) => {
+      const st = stockOf(c, t);
+      return `<option value="${c.id}"${c.id === state.country ? ' selected' : ''}${st === 0 ? ' disabled' : ''}>${esc(c.name)} · ${st === 0 ? 'нет в наличии' : st}</option>`;
+    })
+    .join('');
+  $('#qb-period').innerHTML = data.periods
+    .map((p) => {
+      const price = unitPrice(t, state.country, p.id);
+      const off = price == null;
+      return `<option value="${p.id}"${p.id === state.period ? ' selected' : ''}${off ? ' disabled' : ''}>${p.label} · ${off ? 'недоступно' : rub(price)}</option>`;
+    })
+    .join('');
+  const r = calc();
+  $('#qb-total-label').textContent = `Итого за ${state.qty} шт.`;
+  $('#qb-total').textContent = rub(r.total);
+  $('#qb-old').textContent = r.discount ? rub(r.subtotal) : '';
+}
+
+function bindQuickbuy() {
+  const form = $('#quickbuy');
+  form.addEventListener('change', (e) => {
+    const el = e.target;
+    if (el.id === 'qb-type') selectType(el.value);
+    else if (el.id === 'qb-country') selectCountry(countryById[el.value]);
+    else if (el.id === 'qb-period') state.period = el.value;
+    else return;
+    updateConfig({ tabs: true });
+  });
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    openCheckout([itemFromState()], 'config');
+  });
 }
 
 function setType(typeId, { focusTab = false } = {}) {
@@ -1178,6 +1234,9 @@ function bindGlobal() {
       return;
     }
 
+    // Ссылки на сравнение сразу раскрывают таблицу
+    if (t.closest('a[href="#compare"]')) $('#compare-all').open = true;
+
     const task = t.closest('[data-task]');
     if (task) {
       showReco(task.dataset.task);
@@ -1237,6 +1296,292 @@ function bindGlobal() {
 }
 
 /* ==========================================================================
+   Преимущества: карточки-аккордеон с автопереключением
+   ========================================================================== */
+let featIndex = 0;
+let featTimer = 0;
+let featPaused = false;
+let featVisible = false;
+
+function renderFeatures() {
+  $('#features').innerHTML = data.benefits
+    .map(
+      (b, i) => `<article class="feature" data-feat="${i}">
+        <button type="button" class="feature__head" id="feat-btn-${i}" aria-expanded="false" aria-controls="feat-body-${i}">
+          <span class="feature__num">/${String(i + 1).padStart(2, '0')}</span>
+          <span class="feature__title">${esc(b.title)}</span>
+        </button>
+        <div class="feature__body" id="feat-body-${i}" role="region" aria-labelledby="feat-btn-${i}">
+          <p>${esc(b.text)}</p>
+          <span class="feature__art" aria-hidden="true">${icon(b.icon)}</span>
+        </div>
+      </article>`,
+    )
+    .join('');
+  setFeature(0);
+}
+
+function setFeature(i) {
+  const n = data.benefits.length;
+  featIndex = (i + n) % n;
+  $$('.feature').forEach((f, k) => {
+    const on = k === featIndex;
+    f.classList.toggle('is-active', on);
+    $('.feature__head', f).setAttribute('aria-expanded', String(on));
+  });
+}
+
+function scheduleFeature() {
+  clearTimeout(featTimer);
+  if (reducedMotion.matches || featPaused || !featVisible) return;
+  featTimer = setTimeout(() => {
+    setFeature(featIndex + 1);
+    scheduleFeature();
+  }, 6000);
+}
+
+function bindFeatures() {
+  const box = $('#features');
+  box.addEventListener('click', (e) => {
+    const head = e.target.closest('.feature__head');
+    if (!head) return;
+    setFeature(Number(head.closest('.feature').dataset.feat));
+    scheduleFeature();
+  });
+  $('#feat-prev').addEventListener('click', () => {
+    setFeature(featIndex - 1);
+    scheduleFeature();
+  });
+  $('#feat-next').addEventListener('click', () => {
+    setFeature(featIndex + 1);
+    scheduleFeature();
+  });
+  // Пауза, пока пользователь читает или работает с клавиатуры
+  const pause = (v) => () => {
+    featPaused = v;
+    scheduleFeature();
+  };
+  box.addEventListener('pointerenter', pause(true));
+  box.addEventListener('pointerleave', pause(false));
+  box.addEventListener('focusin', pause(true));
+  box.addEventListener('focusout', pause(false));
+  new IntersectionObserver(([en]) => {
+    featVisible = en.isIntersecting;
+    scheduleFeature();
+  }).observe(box);
+}
+
+/* ==========================================================================
+   Типы прокси: вкладки с описанием и цифрами
+   ========================================================================== */
+let productType = types.find((t) => t.popular)?.id ?? types[0].id;
+
+function renderProduct() {
+  $('#product-tabs').innerHTML = types
+    .map((t) => {
+      const sel = t.id === productType;
+      return `<button type="button" class="ptab" role="tab" id="ptab-${t.id}" data-ptype="${t.id}" aria-selected="${sel}" aria-controls="product-panel" tabindex="${sel ? 0 : -1}">
+        <span>${esc(t.tableName)}</span><span class="ptab__price">от ${rub(priceFrom(t.id))}</span></button>`;
+    })
+    .join('');
+  const t = typeById[productType];
+  const stats = [
+    ['Скорость до', esc(t.speed) + (t.speedQuestion ? ask(t.speedQuestion) : '')],
+    ['Подключений', esc(t.connections)],
+    ['Пользователей на IP', esc(t.usersPerIp)],
+    ['Трафик', esc(t.traffic)],
+    [`Смена IP${tip('rotation')}`, esc(t.ipChange)],
+    [`TCP-отпечаток${tip('tcp')}`, t.tcp ? 'Меняется' : 'Не меняется'],
+  ];
+  const panel = $('#product-panel');
+  panel.setAttribute('aria-labelledby', `ptab-${t.id}`);
+  panel.innerHTML = `
+    <div class="product__main">
+      ${t.popular ? '<span class="badge badge--primary">Популярный выбор</span>' : ''}
+      <h3 class="product__title">${esc(recoName(t))}</h3>
+      <p class="product__desc">${esc(t.desc)}</p>
+      <p class="product__best-title">Лучше всего для:</p>
+      <ul class="product__best">${t.bestFor.map((b) => `<li>${icon('check')}${esc(b)}</li>`).join('')}</ul>
+      <div class="product__actions">
+        <button type="button" class="btn btn--primary btn--xl" data-open-config="${t.id}">Купить от ${rub(priceFrom(t.id))}</button>
+        <button type="button" class="btn btn--outline btn--xl" data-open-test>Бесплатный тест</button>
+      </div>
+    </div>
+    <ul class="product__stats">
+      ${stats.map(([k, v]) => `<li class="stat"><span class="stat__label">${k}</span><span class="stat__value">${v}</span></li>`).join('')}
+    </ul>`;
+  // На mobile вкладки — горизонтальная лента: держим выбранную в поле зрения
+  const strip = $('#product-tabs');
+  const sel = $(`#ptab-${productType}`);
+  const sr = strip.getBoundingClientRect();
+  const cr = sel.getBoundingClientRect();
+  if (cr.right > sr.right) strip.scrollLeft += cr.right - sr.right + 8;
+  else if (cr.left < sr.left) strip.scrollLeft -= sr.left - cr.left + 8;
+  syncHeaderCta();
+}
+
+function bindProduct() {
+  const tabs = $('#product-tabs');
+  tabs.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-ptype]');
+    if (!b) return;
+    productType = b.dataset.ptype;
+    renderProduct();
+  });
+  tabs.addEventListener('keydown', (e) => {
+    const ids = types.map((t) => t.id);
+    let i = ids.indexOf(productType);
+    if (e.key === 'ArrowRight') i = (i + 1) % ids.length;
+    else if (e.key === 'ArrowLeft') i = (i - 1 + ids.length) % ids.length;
+    else if (e.key === 'Home') i = 0;
+    else if (e.key === 'End') i = ids.length - 1;
+    else return;
+    e.preventDefault();
+    productType = ids[i];
+    renderProduct();
+    $(`#ptab-${productType}`).focus();
+  });
+}
+
+/* ==========================================================================
+   Первый экран: интерактивная сетка — «пакеты» бегут по линиям, узлы подсвечиваются у курсора
+   ========================================================================== */
+function initHeroCanvas() {
+  const hero = $('#hero');
+  const canvas = $('#hero-canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  const GAP = 56;
+  const PACKETS = 9;
+  let w = 0;
+  let h = 0;
+  let cols = 0;
+  let rows = 0;
+  let packets = [];
+  const pointer = { x: -9999, y: -9999 };
+  let raf = 0;
+  let last = 0;
+  let visible = true;
+
+  const spawn = () => {
+    const horiz = Math.random() < 0.5;
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const len = horiz ? w : h;
+    return {
+      horiz,
+      lane: Math.floor(Math.random() * (horiz ? rows : cols)),
+      dir,
+      pos: dir > 0 ? -Math.random() * 200 : len + Math.random() * 200,
+      speed: 70 + Math.random() * 110,
+      len,
+    };
+  };
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = hero.clientWidth;
+    h = hero.clientHeight;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cols = Math.ceil(w / GAP) + 1;
+    rows = Math.ceil(h / GAP) + 1;
+    packets = reducedMotion.matches ? [] : Array.from({ length: PACKETS }, spawn);
+    draw(0);
+  }
+
+  function draw(dt) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(255,255,255,0.045)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i < cols; i++) {
+      ctx.moveTo(i * GAP + 0.5, 0);
+      ctx.lineTo(i * GAP + 0.5, h);
+    }
+    for (let j = 0; j < rows; j++) {
+      ctx.moveTo(0, j * GAP + 0.5);
+      ctx.lineTo(w, j * GAP + 0.5);
+    }
+    ctx.stroke();
+
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
+        const x = i * GAP;
+        const y = j * GAP;
+        const d = Math.hypot(x - pointer.x, y - pointer.y);
+        const a = d < 200 ? 1 - d / 200 : 0;
+        if (a > 0) {
+          ctx.fillStyle = `rgba(140,220,100,${0.12 + a * 0.7})`;
+          ctx.beginPath();
+          ctx.arc(x, y, 1.5 + a * 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = 'rgba(255,255,255,0.09)';
+          ctx.fillRect(x - 1, y - 1, 2, 2);
+        }
+      }
+    }
+
+    for (const p of packets) {
+      p.pos += p.dir * p.speed * dt;
+      const x = p.horiz ? p.pos : p.lane * GAP;
+      const y = p.horiz ? p.lane * GAP : p.pos;
+      const tx = p.horiz ? x - p.dir * 70 : x;
+      const ty = p.horiz ? y : y - p.dir * 70;
+      const g = ctx.createLinearGradient(tx, ty, x, y);
+      g.addColorStop(0, 'rgba(110,200,70,0)');
+      g.addColorStop(1, 'rgba(150,235,105,0.85)');
+      ctx.strokeStyle = g;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(tx + 0.5, ty + 0.5);
+      ctx.lineTo(x + 0.5, y + 0.5);
+      ctx.stroke();
+    }
+    packets = packets.filter((p) => p.pos > -260 && p.pos < p.len + 260);
+    while (!reducedMotion.matches && packets.length < PACKETS) packets.push(spawn());
+  }
+
+  function frame(t) {
+    const dt = last ? Math.min((t - last) / 1000, 0.05) : 0;
+    last = t;
+    draw(dt);
+    raf = requestAnimationFrame(frame);
+  }
+
+  function sync() {
+    cancelAnimationFrame(raf);
+    last = 0;
+    if (visible && !document.hidden && !reducedMotion.matches) raf = requestAnimationFrame(frame);
+    else draw(0);
+  }
+
+  hero.addEventListener('pointermove', (e) => {
+    const r = hero.getBoundingClientRect();
+    pointer.x = e.clientX - r.left;
+    pointer.y = e.clientY - r.top;
+    if (reducedMotion.matches) draw(0);
+  });
+  hero.addEventListener('pointerleave', () => {
+    pointer.x = pointer.y = -9999;
+    if (reducedMotion.matches) draw(0);
+  });
+  new ResizeObserver(resize).observe(hero);
+  new IntersectionObserver(([en]) => {
+    visible = en.isIntersecting;
+    sync();
+  }).observe(hero);
+  document.addEventListener('visibilitychange', sync);
+  reducedMotion.addEventListener('change', () => {
+    resize();
+    sync();
+  });
+  resize();
+  sync();
+}
+
+/* ==========================================================================
    Старт
    ========================================================================== */
 hydrateIcons();
@@ -1245,11 +1590,17 @@ renderTasks();
 renderCompare();
 renderReviews();
 renderPromos();
+renderFeatures();
+renderProduct();
 selectType(state.type);
 updateConfig({ tabs: true });
 hydrateIcons();
 
 bindHeader();
+bindQuickbuy();
+bindFeatures();
+bindProduct();
+initHeroCanvas();
 bindConfig();
 bindCheckout();
 bindTest();

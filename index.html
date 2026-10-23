@@ -55,7 +55,6 @@
               <button type="button" class="lang__btn" aria-pressed="true" data-lang="ru">RU</button>
               <button type="button" class="lang__btn" aria-pressed="false" data-lang="en">ENG</button>
             </div>
-            <a class="btn btn--outline btn--sm" href="#" data-stub="Личный кабинет">Войти</a>
           </div>
         </nav>
 
@@ -68,7 +67,7 @@
             <span data-icon="cart"></span>
             <span class="cart-btn__count" id="cart-count" aria-hidden="true">0</span>
           </button>
-          <a class="btn btn--ghost btn--sm header__login" href="#" data-stub="Личный кабинет">Войти</a>
+          <a class="btn btn--ghost btn--sm header__login" href="#" data-stub="Личный кабинет" aria-label="Войти в личный кабинет"><span data-icon="login"></span><span class="header__login-text">Войти</span></a>
           <a class="btn btn--outline btn--sm header__cta" id="header-cta" href="#picker">
             Купить<span class="hide-sm">&nbsp;прокси</span>
           </a>
@@ -80,49 +79,74 @@
     </header>
 
     <main id="main">
-      <!-- 2. Первый экран -->
+      <!-- 2. Первый экран: выбор и покупка сразу -->
       <section class="hero" id="hero" aria-labelledby="hero-title">
+        <canvas class="hero__canvas" id="hero-canvas" aria-hidden="true"></canvas>
         <div class="container hero__inner">
-          <div class="hero__text">
-            <p class="eyebrow">Купить мобильные прокси и серверные IPv4</p>
-            <h1 id="hero-title">Мобильные и серверные прокси с выдачей за 5 минут</h1>
-            <p class="hero__sub">
-              4G/LTE с ротацией IP<span data-term="rotation"></span> и серверные IPv4. Безлимитный трафик, аренда от 4
-              часов, поддержка 24/7.
-            </p>
-            <div class="hero__actions">
-              <a class="btn btn--primary btn--lg" href="#picker">Подобрать прокси</a>
-              <button type="button" class="btn btn--outline btn--lg" data-open-test>Получить бесплатный тест</button>
-            </div>
-            <p class="hero__tg">
-              Удобнее через Telegram? <a class="link" href="#" data-stub="Telegram-бот">Купить в боте&nbsp;→</a>
-            </p>
-          </div>
+          <a class="hero__rating" href="#reviews" id="hero-rating"></a>
+          <h1 id="hero-title">Мобильные и серверные прокси с&nbsp;выдачей за 5&nbsp;минут</h1>
+          <p class="hero__sub">
+            Купить мобильные прокси 4G/LTE с ротацией IP<span data-term="rotation"></span> и серверные IPv4.
+            Безлимитный трафик, аренда от 4 часов, поддержка 24/7.
+          </p>
 
-          <div class="hero__cards" aria-label="Цены">
-            <article class="price-card">
-              <h2 class="price-card__title">Мобильные прокси</h2>
-              <p class="price-card__price">от <b data-price-from="mobile">290 ₽</b></p>
-              <p class="price-card__desc">4G/LTE, смена IP</p>
-              <button type="button" class="btn btn--outline btn--block" data-open-config="private" aria-label="Выбрать мобильные прокси">
-                Выбрать
-              </button>
-            </article>
-            <article class="price-card">
-              <h2 class="price-card__title">Серверные IPv4</h2>
-              <p class="price-card__price">от <b data-price-from="server">40 ₽</b></p>
-              <p class="price-card__desc">Статичный IP, до 100&nbsp;Мбит/с</p>
-              <button type="button" class="btn btn--outline btn--block" data-open-config="ipv4" aria-label="Выбрать серверные IPv4">
-                Выбрать
-              </button>
-            </article>
-          </div>
+          <form class="quickbuy" id="quickbuy" aria-label="Быстрый заказ прокси">
+            <div class="quickbuy__field">
+              <label class="quickbuy__label" for="qb-type">Тип прокси</label>
+              <select class="quickbuy__select" id="qb-type"></select>
+            </div>
+            <div class="quickbuy__field">
+              <label class="quickbuy__label" for="qb-country">Страна</label>
+              <select class="quickbuy__select" id="qb-country"></select>
+            </div>
+            <div class="quickbuy__field">
+              <label class="quickbuy__label" for="qb-period">Срок аренды</label>
+              <select class="quickbuy__select" id="qb-period"></select>
+            </div>
+            <div class="quickbuy__total">
+              <span class="quickbuy__label" id="qb-total-label">Итого</span>
+              <span class="quickbuy__sum"><b id="qb-total"></b> <s id="qb-old"></s></span>
+              <a class="quickbuy__more" href="#buy">Оператор, город, количество, купон →</a>
+            </div>
+            <button type="submit" class="btn btn--primary btn--xl quickbuy__buy">Купить прокси</button>
+          </form>
+
+          <p class="hero__links">
+            <a class="hero__link" href="#picker">Не знаете, что выбрать? Подбор по задаче</a>
+            <button type="button" class="hero__link" data-open-test>Получить бесплатный тест</button>
+            <a class="hero__link" href="#" data-stub="Telegram-бот">Купить в Telegram-боте</a>
+          </p>
+
+          <ul class="hero__checks" id="hero-checks"></ul>
         </div>
       </section>
 
-      <!-- 3. Полоса доверия -->
-      <section class="trust" aria-label="Почему нам доверяют">
-        <ul class="container trust__list" id="trust-list"></ul>
+      <!-- 3. Доверие: клиенты, «работает с», оплата -->
+      <section class="trust" aria-labelledby="trust-title">
+        <div class="container">
+          <h2 class="trust__title" id="trust-title"></h2>
+          <ul class="trust__stats" id="trust-list"></ul>
+        </div>
+        <div class="marquee" aria-label="Совместимые антидетект-браузеры и программы">
+          <ul class="marquee__track" id="works-with"></ul>
+        </div>
+      </section>
+
+      <!-- Преимущества: карточки-аккордеон -->
+      <section class="section section--tight" id="benefits" aria-labelledby="benefits-title">
+        <div class="container">
+          <div class="section__head">
+            <h2 id="benefits-title">Почему Frigate Proxy</h2>
+          </div>
+          <div class="features" id="features"></div>
+          <div class="features__nav">
+            <button type="button" class="icon-btn" id="feat-prev" aria-label="Предыдущее преимущество"><span data-icon="arrowLeft"></span></button>
+            <button type="button" class="icon-btn" id="feat-next" aria-label="Следующее преимущество"><span data-icon="arrowRight"></span></button>
+          </div>
+          <div class="section__cta">
+            <button type="button" class="btn btn--primary btn--xl" data-open-test>Получить бесплатный тест</button>
+          </div>
+        </div>
       </section>
 
       <!-- 4. Подбор по задаче -->
@@ -142,17 +166,25 @@
         </div>
       </section>
 
-      <!-- 5. Сравнение типов -->
+      <!-- 5. Типы прокси -->
       <section class="section section--soft" id="compare" aria-labelledby="compare-title">
         <div class="container">
           <div class="section__head">
-            <h2 id="compare-title">Чем отличаются типы прокси</h2>
-            <p class="section__lead">Все цифры в одном месте — сравните и выберите.</p>
+            <h2 id="compare-title">Типы прокси</h2>
+            <p class="section__lead">Чем отличаются и для чего подходят — с конкретными цифрами.</p>
           </div>
-          <div class="compare-table-wrap" id="compare-table"></div>
-          <div class="ccards" id="compare-cards" role="list" aria-label="Типы прокси"></div>
-          <p class="footnote" id="compare-footnote"></p>
-          <p><a class="link" href="#" data-stub="Страницы типов прокси">Подробнее о каждом типе →</a></p>
+          <div class="ptabs" role="tablist" aria-label="Типы прокси" id="product-tabs"></div>
+          <div class="product" id="product-panel" role="tabpanel"></div>
+
+          <details class="compare-all" id="compare-all">
+            <summary class="btn btn--outline btn--lg">Сравнить все типы в таблице</summary>
+            <div class="compare-all__body">
+              <div class="compare-table-wrap" id="compare-table"></div>
+              <div class="ccards" id="compare-cards" role="list" aria-label="Типы прокси"></div>
+              <p class="footnote" id="compare-footnote"></p>
+            </div>
+          </details>
+          <p class="compare__more"><a class="link" href="#" data-stub="Страницы типов прокси">Подробнее о каждом типе →</a></p>
         </div>
       </section>
 
@@ -160,8 +192,8 @@
       <section class="section" id="buy" aria-labelledby="buy-title">
         <div class="container">
           <div class="section__head">
-            <h2 id="buy-title">Купить прокси</h2>
-            <p class="section__lead">Цена уже посчитана для популярных параметров — поменяйте то, что нужно.</p>
+            <h2 id="buy-title">Настройте заказ</h2>
+            <p class="section__lead">Те же параметры, что на первом экране, плюс оператор, город, количество и купон.</p>
           </div>
 
           <div class="config">
@@ -238,50 +270,6 @@
               <p>В браузере, антидетекте или софте. <a class="link" href="#" data-stub="Инструкции по настройке">Инструкции по настройке</a></p>
             </li>
           </ol>
-        </div>
-      </section>
-
-      <!-- 8. Преимущества -->
-      <section class="section" id="benefits" aria-labelledby="benefits-title">
-        <div class="container">
-          <div class="section__head">
-            <h2 id="benefits-title">Почему выбирают нас</h2>
-          </div>
-          <ul class="benefits">
-            <li class="benefit">
-              <span class="benefit__icon" data-icon="infinity"></span>
-              <h3>Безлимитный трафик</h3>
-              <p>Не считаем гигабайты в рамках честного использования.</p>
-            </li>
-            <li class="benefit">
-              <span class="benefit__icon" data-icon="clock"></span>
-              <h3>Аренда от 4 часов</h3>
-              <p>Под разовую задачу не нужно платить за месяц.</p>
-            </li>
-            <li class="benefit">
-              <span class="benefit__icon" data-icon="bolt"></span>
-              <h3>Выдача за 5 минут</h3>
-              <p>Доступы приходят сразу после оплаты.</p>
-            </li>
-            <li class="benefit">
-              <span class="benefit__icon" data-icon="gift"></span>
-              <h3>Бесплатный тест</h3>
-              <p>Проверьте прокси на своих задачах до покупки.</p>
-            </li>
-            <li class="benefit">
-              <span class="benefit__icon" data-icon="refresh"></span>
-              <h3>Смена IP по таймеру или по ссылке</h3>
-              <p>Настройте интервал или меняйте адрес вручную.</p>
-            </li>
-            <li class="benefit">
-              <span class="benefit__icon" data-icon="chat"></span>
-              <h3>Поддержка 24/7 в Telegram</h3>
-              <p>Отвечаем живыми людьми днём и ночью.</p>
-            </li>
-          </ul>
-          <div class="section__cta">
-            <button type="button" class="btn btn--primary btn--lg" data-open-test>Получить бесплатный тест</button>
-          </div>
         </div>
       </section>
 
