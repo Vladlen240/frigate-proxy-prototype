@@ -6157,3 +6157,65 @@ body.dd-open {
     font-weight: 600;
   }
 }
+
+/* Стрелки — по нижнему краю активной карточки, как у proxy-seller.
+   Содержимое активной карточки — одной группой по центру */
+@media (min-width: 960px) {
+  .features-wrap {
+    --feat-high: 320px;
+    --feat-arrow: 52px;
+    --feat-low: calc(var(--feat-high) - var(--feat-arrow) - 20px);
+  }
+
+  .features__nav {
+    top: calc(var(--feat-high) - var(--feat-arrow));
+  }
+
+  .feature.is-active {
+    justify-content: center;
+    gap: 22px;
+    padding: 40px 44px;
+  }
+
+  .feature.is-active .feature__head,
+  .feature.is-active .feature__body {
+    flex: none;
+    padding: 0;
+  }
+
+  .feature.is-active .feature__head {
+    gap: 12px;
+  }
+}
+
+.feature__link {
+  margin-top: 16px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgb(255 255 255 / 0.5);
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.feature__link:hover {
+  text-decoration-color: #fff;
+}
+
+.feature__link:focus-visible {
+  outline-color: #fff;
+}
+
+.feature:not(.is-active) .feature__link {
+  display: none;
+}
+
+@media (min-width: 960px) {
+  .feature.is-active .feature__body {
+    align-self: stretch;
+  }
+}

@@ -1671,6 +1671,7 @@ function renderFeatures() {
         </button>
         <div class="feature__body" id="feat-body-${i}" role="region" aria-labelledby="feat-btn-${i}">
           <p>${esc(b.text)}</p>
+          ${b.cta === 'test' ? '<button type="button" class="feature__link" data-open-test>Получить тест →</button>' : ''}
         </div>
       </article>`,
     )
