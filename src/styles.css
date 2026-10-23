@@ -5195,3 +5195,192 @@ body.dd-open {
       0 20px 48px rgb(0 0 0 / 0.55);
   }
 }
+
+/* ---------- Первый экран: три поля + стоимость с количеством ---------- */
+.quickbuy {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.quickbuy__field {
+  grid-column: span 2;
+}
+
+.quickbuy__total,
+.quickbuy .quickbuy__buy {
+  grid-column: span 3;
+}
+
+.quickbuy__extra {
+  gap: 8px 12px;
+  margin-top: 10px;
+}
+
+.qb-qty-unit {
+  color: var(--c-hero-muted);
+}
+
+.qb-stepper button,
+.qb-stepper input {
+  height: 40px;
+}
+
+.qb-stepper button {
+  width: 40px;
+}
+
+.qb-stepper:focus-within {
+  border-color: var(--c-accent-light);
+}
+
+/* Поле «Модемов» у лицензии: счётчик крупнее, в размер значений соседних полей */
+.qb-stepper--modems {
+  margin-top: 8px;
+}
+
+.qb-stepper--modems button,
+.qb-stepper--modems input {
+  height: var(--touch);
+  font-size: 20px;
+}
+
+.qb-stepper--modems button {
+  width: 52px;
+}
+
+.qb-stepper--modems input {
+  width: 72px;
+}
+
+.qb-more {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 40px;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--c-accent-light);
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.qb-more:hover {
+  color: #fff;
+}
+
+.qb-more__value {
+  color: var(--c-hero-muted);
+  font-size: 13px;
+  font-weight: 400;
+  text-decoration: none;
+}
+
+@media (min-width: 768px) {
+  .qb-more {
+    margin-left: auto;
+    align-items: flex-end;
+    text-align: right;
+  }
+}
+
+@media (max-width: 767px) {
+  .quickbuy {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .quickbuy__field {
+    grid-column: span 1;
+  }
+
+  .quickbuy__field:first-child,
+  .quickbuy__total,
+  .quickbuy .quickbuy__buy {
+    grid-column: span 2;
+  }
+
+  .quickbuy__total {
+    padding: 14px 16px;
+  }
+
+  .quickbuy__unit {
+    display: inline;
+  }
+
+  .qb-stepper button,
+  .qb-stepper input {
+    height: var(--touch);
+  }
+
+  .qb-stepper button {
+    width: var(--touch);
+  }
+
+  .qb-more {
+    min-height: var(--touch);
+  }
+
+  .qb-stepper--modems input {
+    width: 56px;
+  }
+}
+
+/* Окно параметров: компактные отступы */
+#params-dialog .field:first-child {
+  margin-top: 8px;
+}
+
+/* Ширина полей по длине значений: тариф шире, срок уже */
+@media (min-width: 768px) {
+  .quickbuy {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .quickbuy__field:nth-child(1) {
+    grid-column: span 5;
+  }
+
+  .quickbuy__field:nth-child(2) {
+    grid-column: span 4;
+  }
+
+  .quickbuy__field:nth-child(3) {
+    grid-column: span 3;
+  }
+
+  .quickbuy__total,
+  .quickbuy .quickbuy__buy {
+    grid-column: span 6;
+  }
+}
+
+.qb-more__short {
+  display: none;
+}
+
+/* Mobile: счётчик и «Ещё параметры» в одну строку — кнопка «Купить» остаётся в первом экране */
+@media (max-width: 767px) {
+  .quickbuy__extra {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+
+  .qb-qty-unit,
+  .qb-more__value,
+  .qb-more__full {
+    display: none;
+  }
+
+  .qb-more__short {
+    display: inline;
+  }
+
+  .hero .hero__sub {
+    font-size: 15px;
+  }
+}

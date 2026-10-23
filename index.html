@@ -93,6 +93,7 @@
           <form class="quickbuy" id="quickbuy" aria-label="Быстрый заказ прокси">
             <div class="quickbuy__field" id="qb-type-field"></div>
             <div class="quickbuy__field" id="qb-second-field"></div>
+            <div class="quickbuy__field" id="qb-third-field"></div>
             <div class="quickbuy__total">
               <span class="quickbuy__label" id="qb-total-label">Итого</span>
               <span class="quickbuy__sum"><b id="qb-total"></b> <s id="qb-old"></s> <span class="quickbuy__unit" id="qb-unit"></span></span>
@@ -587,6 +588,22 @@
           <button type="button" class="icon-btn icon-btn--plain" data-close aria-label="Закрыть"><span data-icon="close"></span></button>
         </header>
         <div class="modal__body" id="cart-body"></div>
+      </div>
+    </dialog>
+
+    <!-- Окно «Ещё параметры» первого экрана -->
+    <dialog class="modal" id="params-dialog" aria-labelledby="params-title">
+      <div class="modal__inner">
+        <header class="modal__head">
+          <h2 class="modal__title" id="params-title">Параметры заказа</h2>
+          <button type="button" class="icon-btn icon-btn--plain" data-close aria-label="Закрыть"><span data-icon="close"></span></button>
+        </header>
+        <div class="modal__body">
+          <div id="params-body"></div>
+          <div class="modal__footer">
+            <button type="button" class="btn btn--primary btn--xl btn--block" id="params-done" data-close>Готово</button>
+          </div>
+        </div>
       </div>
     </dialog>
 

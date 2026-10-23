@@ -667,7 +667,29 @@ function renderQuickbuy() {
     },
   });
 
-  // Второе поле — срок аренды (для лицензии ProxyFarm — срок подписки)
+  // Второе поле — страна (для лицензии ProxyFarm — число модемов)
+  const second = $('#qb-second-field');
+  if (farm) {
+    second.innerHTML = `
+      <span class="quickbuy__label" id="qb-modems-label">Модемов</span>
+      ${stepperHtml('modems', farmState.modems, data.farm.maxModems, 'qb-modems-label')}`;
+  } else {
+    renderDropdown(second, {
+      id: 'qb-country',
+      label: 'Страна',
+      options: countriesFor(state.type).map((c) => {
+        const st = stockOf(c, state.type);
+        return { value: c.id, label: c.name, flag: c.flag, meta: st === 0 ? 'нет в наличии' : `${st} шт.`, disabled: st === 0 };
+      }),
+      value: state.country,
+      onChange: (v) => {
+        selectCountry(countryById[v]);
+        updateConfig();
+      },
+    });
+  }
+
+  // Третье поле — срок аренды (для лицензии — срок подписки)
   const periodOptions = farm
     ? data.farm.plans.map((p) => ({
         value: p.id,
@@ -683,7 +705,7 @@ function renderQuickbuy() {
           disabled: price == null,
         };
       });
-  renderDropdown($('#qb-second-field'), {
+  renderDropdown($('#qb-third-field'), {
     id: 'qb-period',
     label: 'Срок аренды',
     options: periodOptions,
@@ -699,7 +721,7 @@ function renderQuickbuy() {
     },
   });
 
-  // Итог: сумма, цена за единицу и что ещё можно поменять
+  // Общая стоимость: сумма, цена за единицу, количество и «Ещё параметры»
   const extra = $('#qb-extra');
   $('#qb-total-label').textContent = 'Общая стоимость:';
   if (farm) {
@@ -707,25 +729,131 @@ function renderQuickbuy() {
     $('#qb-total').textContent = rub(r.total);
     $('#qb-old').textContent = r.discount ? rub(r.subtotal) : '';
     $('#qb-unit').textContent = `(${rub(data.farm.pricePerModem)} за модем в месяц)`;
-    extra.innerHTML = `
-      <span class="qb-stepper" role="group" aria-label="Количество модемов">
-        <button type="button" data-modems="-1" aria-label="Меньше модемов"${farmState.modems <= 1 ? ' disabled' : ''}>−</button>
-        <input type="number" id="qb-modems" min="1" max="${data.farm.maxModems}" value="${farmState.modems}" inputmode="numeric" aria-label="Модемов">
-        <button type="button" data-modems="1" aria-label="Больше модемов">+</button>
-      </span>
-      <span>${plural(farmState.modems, ['модем', 'модема', 'модемов'])}</span>`;
+    extra.innerHTML = `<span>Пробный период — ${data.farm.trialDays} дней бесплатно</span>`;
     $('#qb-buy').textContent = 'Купить лицензию';
   } else {
     const r = calc();
-    const c = countryById[state.country];
+    const max = stockOf(countryById[state.country]);
     $('#qb-total').textContent = rub(r.total);
     $('#qb-old').textContent = r.discount ? rub(r.subtotal) : '';
     $('#qb-unit').textContent = state.qty > 1 ? `(${state.qty} × ${rub(r.unit)})` : `(${rub(r.unit)} за шт.)`;
-    extra.innerHTML = `<span class="flag" style="background:${c.flag}" aria-hidden="true"></span>${esc(c.name)}${
-      state.city ? `, ${esc(state.city)}` : ''
-    } · <a href="#buy">изменить</a>`;
+    const summary = [state.operator && `${state.operator}, ${state.city}`, r.check.ok && `купон ${r.check.promo.code}`].filter(Boolean).join(' · ');
+    extra.innerHTML = `
+      ${stepperHtml('qty', state.qty, max, null, 'Количество, шт.')}
+      <span class="qb-qty-unit">шт.</span>
+      <button type="button" class="qb-more" data-open-params aria-haspopup="dialog">
+        <span class="qb-more__full">${isMobileType() ? 'Оператор, город, купон' : 'Купон'}</span>
+        <span class="qb-more__short" aria-hidden="true">Ещё параметры</span>
+        ${summary ? `<span class="qb-more__value">${esc(summary)}</span>` : ''}
+      </button>`;
     $('#qb-buy').textContent = 'Купить прокси';
   }
+}
+
+/* Счётчик − N + для количества прокси и числа модемов */
+function stepperHtml(kind, value, max, labelledBy, label) {
+  const by = labelledBy ? `aria-labelledby="${labelledBy}"` : `aria-label="${label}"`;
+  return `<span class="qb-stepper qb-stepper--${kind}" role="group" ${by}>
+    <button type="button" data-step="${kind}" data-delta="-1" aria-label="Меньше"${value <= 1 ? ' disabled' : ''}>−</button>
+    <input type="number" data-step-input="${kind}" min="1" max="${max}" value="${value}" inputmode="numeric" ${by}>
+    <button type="button" data-step="${kind}" data-delta="1" aria-label="Больше"${value >= max ? ' disabled' : ''}>+</button>
+  </span>`;
+}
+
+function setStep(kind, value) {
+  if (kind === 'modems') {
+    farmState.modems = clamp(value || 1, 1, data.farm.maxModems);
+    renderQuickbuy();
+  } else {
+    state.qty = clamp(value || 1, 1, stockOf(countryById[state.country]));
+    updateConfig();
+  }
+}
+
+/* ==========================================================================
+   «Ещё параметры»: оператор, город и купон — прямо на первом экране
+   ========================================================================== */
+function renderParams() {
+  const box = $('#params-body');
+  const a = document.activeElement;
+  const restore = a && box.contains(a) && a.name ? `[name="${a.name}"][value="${CSS.escape(a.value)}"]` : null;
+  const country = countryById[state.country];
+  let html = '';
+  if (isMobileType() && country.operators) {
+    const op = country.operators.find((o) => o.name === state.operator);
+    html += `
+      <fieldset class="field">
+        <legend class="field__label">Оператор</legend>
+        <div class="choices">${country.operators
+          .map(
+            (o) => `<label class="choice"><input type="radio" name="p-operator" value="${esc(o.name)}"${o.name === state.operator ? ' checked' : ''}>
+              <span class="choice__body">${esc(o.name)}</span></label>`,
+          )
+          .join('')}</div>
+      </fieldset>
+      <fieldset class="field">
+        <legend class="field__label">Город и качество сигнала${tip('signal')}</legend>
+        <div class="cities">${op.cities
+          .map(
+            (c) => `<label class="city"><input type="radio" name="p-city" value="${esc(c.name)}"${c.name === state.city ? ' checked' : ''}>
+              <span class="city__body"><span class="city__name">${esc(c.name)}</span>
+              <span class="city__signal">${c.signal}%<span class="sr-only"> качество сигнала</span></span>
+              <span class="signal-bar${c.signal < 80 ? ' is-mid' : ''}" aria-hidden="true"><span style="width:${c.signal}%"></span></span></span></label>`,
+          )
+          .join('')}</div>
+      </fieldset>`;
+  }
+  const r = calc();
+  html += `
+    <div class="field">
+      <label class="field__label" for="p-coupon">Купон</label>
+      <div class="coupon__row">
+        <input class="input" id="p-coupon" autocomplete="off" spellcheck="false" placeholder="Например, FRIGATE10" value="${esc(state.coupon)}">
+        <button type="button" class="btn btn--outline btn--sm" id="p-coupon-apply">Применить</button>
+      </div>
+      <p class="coupon__msg${r.check.empty ? '' : ` is-${r.check.level}`}" aria-live="polite">${
+        r.check.empty ? '' : esc(r.check.ok ? `${r.check.msg} (−${rub(r.discount)})` : r.check.msg)
+      }</p>
+    </div>`;
+  box.innerHTML = html;
+  $('#params-done').textContent = `Готово · ${rub(r.total)}`;
+  if (restore) box.querySelector(restore)?.focus({ preventScroll: true });
+}
+
+function openParams() {
+  renderParams();
+  openDialog($('#params-dialog'));
+}
+
+function bindParams() {
+  const box = $('#params-body');
+  box.addEventListener('change', (e) => {
+    const el = e.target;
+    if (el.name === 'p-operator') {
+      const op = countryById[state.country].operators.find((o) => o.name === el.value);
+      state.operator = op.name;
+      state.city = bestCity(op).name;
+    } else if (el.name === 'p-city') state.city = el.value;
+    else return;
+    updateConfig();
+    renderParams();
+  });
+  const applyCoupon = () => {
+    state.coupon = $('#p-coupon').value.trim().toUpperCase();
+    $('#coupon-input').value = state.coupon;
+    updateConfig();
+    renderParams();
+    $('#p-coupon').focus();
+  };
+  box.addEventListener('click', (e) => {
+    if (e.target.closest('#p-coupon-apply')) applyCoupon();
+  });
+  box.addEventListener('keydown', (e) => {
+    if (e.target.id === 'p-coupon' && e.key === 'Enter') {
+      e.preventDefault();
+      applyCoupon();
+    }
+  });
 }
 
 function farmItem() {
@@ -736,18 +864,18 @@ function farmItem() {
 function bindQuickbuy() {
   const form = $('#quickbuy');
   form.addEventListener('change', (e) => {
-    const el = e.target;
-    if (el.id === 'qb-modems') {
-      farmState.modems = clamp(parseInt(el.value, 10) || 1, 1, data.farm.maxModems);
-    } else return;
-    renderQuickbuy();
+    const kind = e.target.dataset.stepInput;
+    if (kind) setStep(kind, parseInt(e.target.value, 10));
   });
   form.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-modems]');
+    if (e.target.closest('[data-open-params]')) return openParams();
+    const b = e.target.closest('[data-step]');
     if (!b) return;
-    farmState.modems = clamp(farmState.modems + Number(b.dataset.modems), 1, data.farm.maxModems);
-    renderQuickbuy();
-    $(`[data-modems="${b.dataset.modems}"]`)?.focus({ preventScroll: true });
+    const kind = b.dataset.step;
+    const cur = kind === 'modems' ? farmState.modems : state.qty;
+    setStep(kind, cur + Number(b.dataset.delta));
+    const again = $(`[data-step="${kind}"][data-delta="${b.dataset.delta}"]`);
+    (again && !again.disabled ? again : $(`[data-step-input="${kind}"]`))?.focus({ preventScroll: true });
   });
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -1926,6 +2054,7 @@ hydrateIcons();
 bindHeader();
 bindQuickbuy();
 bindDropdowns();
+bindParams();
 bindFeatures();
 bindProduct();
 initHeroCanvas();
