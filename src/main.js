@@ -519,7 +519,10 @@ function setActive(dd, li) {
   if (!li) return;
   li.classList.add('is-active');
   list.setAttribute('aria-activedescendant', li.id);
-  li.scrollIntoView({ block: 'nearest' });
+  // Прокручиваем только сам список — scrollIntoView сдвинул бы и страницу
+  const top = li.offsetTop - list.offsetTop;
+  if (top < list.scrollTop) list.scrollTop = top;
+  else if (top + li.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = top + li.offsetHeight - list.clientHeight;
 }
 
 function openDropdown(dd) {
@@ -532,9 +535,32 @@ function openDropdown(dd) {
     $('#dd-backdrop').hidden = false;
     document.body.classList.add('dd-open');
   }
+  else fitPopup(dd);
   const list = $('.dd__list', dd);
   setActive(dd, $('.dd__option[aria-selected="true"]', dd) || ddEnabled(dd)[0]);
   list.focus({ preventScroll: true });
+}
+
+/* Панель списка не выходит за границы первого экрана:
+   открывается туда, где больше места, и при нехватке прокручивается внутри */
+function fitPopup(dd) {
+  const popup = $('.dd__popup', dd);
+  const list = $('.dd__list', dd);
+  const bounds = dd.closest('.hero')?.getBoundingClientRect();
+  if (!bounds) return;
+  popup.classList.remove('dd__popup--up');
+  list.style.maxHeight = '';
+  const field = dd.closest('.quickbuy__field').getBoundingClientRect();
+  const GAP = 12;
+  const MARGIN = 16;
+  const chrome = popup.offsetHeight - list.clientHeight; // отступы и рамка панели
+  const natural = list.scrollHeight + chrome;
+  const below = bounds.bottom - field.bottom - GAP - MARGIN;
+  const above = field.top - bounds.top - GAP - MARGIN;
+  const up = natural > below && above > below;
+  popup.classList.toggle('dd__popup--up', up);
+  const room = up ? above : below;
+  if (natural > room) list.style.maxHeight = `${Math.max(room - chrome, 120)}px`;
 }
 
 function closeDropdown(focusButton = true) {
@@ -599,6 +625,7 @@ function bindDropdowns() {
     setActive(openDd, items[i]);
   });
   mqSmall.addEventListener('change', () => closeDropdown(false));
+  window.addEventListener('resize', () => openDd && !mqSmall.matches && fitPopup(openDd));
 }
 
 /* ==========================================================================
@@ -1569,11 +1596,11 @@ function renderFeatures() {
       (b, i) => `<article class="feature" data-feat="${i}">
         <button type="button" class="feature__head" id="feat-btn-${i}" aria-expanded="false" aria-controls="feat-body-${i}">
           <span class="feature__num">/${String(i + 1).padStart(2, '0')}</span>
-          <span class="feature__title">${esc(b.title)}</span>
+          <span class="feature__title feature__title--full">${esc(b.title)}</span>
+          <span class="feature__title feature__title--short" aria-hidden="true">${b.short.split('|').map(esc).join('<br>')}</span>
         </button>
         <div class="feature__body" id="feat-body-${i}" role="region" aria-labelledby="feat-btn-${i}">
           <p>${esc(b.text)}</p>
-          <span class="feature__art" aria-hidden="true">${icon(b.icon)}</span>
         </div>
       </article>`,
     )
@@ -1636,14 +1663,60 @@ function bindFeatures() {
    ========================================================================== */
 let productType = types.find((t) => t.popular)?.id ?? types[0].id;
 
+/* Все тарифы сайта: 4 типа прокси + лицензия ProxyFarm */
+const productTabs = () => [
+  ...types.map((t) => ({ id: t.id, name: t.tableName, price: `от ${rub(priceFrom(t.id))}` })),
+  { id: FARM, name: data.farm.name, price: `${rub(data.farm.pricePerModem)} за модем` },
+];
+
+function renderFarmProduct(panel) {
+  const f = data.farm;
+  const stats = [
+    ['Цена', `${rub(f.pricePerModem)} за модем в месяц`],
+    ['При оплате за год', `−${f.yearDiscount}%`],
+    ['Пробный период', `${f.trialDays} дней бесплатно`],
+    ['Модемов', `от 1 до ${f.maxModems}`],
+  ];
+  panel.innerHTML = `
+    <div class="product__main">
+      <span class="badge badge--neutral">Софт для прокси-ферм</span>
+      <h3 class="product__title">${esc(f.name)}</h3>
+      <p class="product__desc">${esc(f.desc)}</p>
+      <p class="product__best-title">Что даёт:</p>
+      <ul class="product__best">${f.benefits.map((b) => `<li>${icon('check')}${esc(b)}</li>`).join('')}</ul>
+      <div class="product__actions">
+        <button type="button" class="btn btn--primary btn--xl" data-buy-farm>Купить лицензию</button>
+        <a class="btn btn--outline btn--xl" href="#" data-stub="Регистрация в ProxyFarm">Попробовать ${f.trialDays} дней бесплатно</a>
+      </div>
+    </div>
+    <ul class="product__stats">
+      ${stats.map(([k, v]) => `<li class="stat"><span class="stat__label">${k}</span><span class="stat__value">${v}</span></li>`).join('')}
+    </ul>`;
+}
+
+/* «Купить лицензию» из типов — переключает форму первого экрана на ProxyFarm */
+function openFarmBuy() {
+  qbMode = FARM;
+  renderQuickbuy();
+  $('#hero').scrollIntoView({ behavior: scrollBehavior() });
+  $('#qb-buy').focus({ preventScroll: true });
+}
+
 function renderProduct() {
-  $('#product-tabs').innerHTML = types
+  $('#product-tabs').innerHTML = productTabs()
     .map((t) => {
       const sel = t.id === productType;
       return `<button type="button" class="ptab" role="tab" id="ptab-${t.id}" data-ptype="${t.id}" aria-selected="${sel}" aria-controls="product-panel" tabindex="${sel ? 0 : -1}">
-        <span>${esc(t.tableName)}</span><span class="ptab__price">от ${rub(priceFrom(t.id))}</span></button>`;
+        <span>${esc(t.name)}</span><span class="ptab__price">${t.price}</span></button>`;
     })
     .join('');
+  const panel = $('#product-panel');
+  panel.setAttribute('aria-labelledby', `ptab-${productType}`);
+  if (productType === FARM) {
+    renderFarmProduct(panel);
+    syncHeaderCta();
+    return;
+  }
   const t = typeById[productType];
   const stats = [
     ['Скорость до', esc(t.speed) + (t.speedQuestion ? ask(t.speedQuestion) : '')],
@@ -1653,8 +1726,6 @@ function renderProduct() {
     [`Смена IP${tip('rotation')}`, esc(t.ipChange)],
     [`TCP-отпечаток${tip('tcp')}`, t.tcp ? 'Меняется' : 'Не меняется'],
   ];
-  const panel = $('#product-panel');
-  panel.setAttribute('aria-labelledby', `ptab-${t.id}`);
   panel.innerHTML = `
     <div class="product__main">
       ${t.popular ? '<span class="badge badge--primary">Популярный выбор</span>' : ''}
@@ -1670,13 +1741,6 @@ function renderProduct() {
     <ul class="product__stats">
       ${stats.map(([k, v]) => `<li class="stat"><span class="stat__label">${k}</span><span class="stat__value">${v}</span></li>`).join('')}
     </ul>`;
-  // На mobile вкладки — горизонтальная лента: держим выбранную в поле зрения
-  const strip = $('#product-tabs');
-  const sel = $(`#ptab-${productType}`);
-  const sr = strip.getBoundingClientRect();
-  const cr = sel.getBoundingClientRect();
-  if (cr.right > sr.right) strip.scrollLeft += cr.right - sr.right + 8;
-  else if (cr.left < sr.left) strip.scrollLeft -= sr.left - cr.left + 8;
   syncHeaderCta();
 }
 
@@ -1688,8 +1752,11 @@ function bindProduct() {
     productType = b.dataset.ptype;
     renderProduct();
   });
+  $('#product-panel').addEventListener('click', (e) => {
+    if (e.target.closest('[data-buy-farm]')) openFarmBuy();
+  });
   tabs.addEventListener('keydown', (e) => {
-    const ids = types.map((t) => t.id);
+    const ids = productTabs().map((t) => t.id);
     let i = ids.indexOf(productType);
     if (e.key === 'ArrowRight') i = (i + 1) % ids.length;
     else if (e.key === 'ArrowLeft') i = (i - 1 + ids.length) % ids.length;
