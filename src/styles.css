@@ -14,10 +14,10 @@
   --c-muted: #4f5a6b;
   --c-border: #d9dfe8;
   --c-border-strong: #b6c0ce;
-  --c-primary: #1b4fd8;
-  --c-primary-hover: #143daa;
-  --c-primary-soft: #eaf0ff;
-  --c-primary-ink: #123a9e;
+  --c-primary: #2f7c11;
+  --c-primary-hover: #25610d;
+  --c-primary-soft: #ecf8e7;
+  --c-primary-ink: #21580c;
   --c-good: #0b7a4b;
   --c-good-soft: #e3f5ec;
   --c-warn: #7a4b00;
@@ -29,7 +29,7 @@
   --c-dark-2: #0a1220;
   --c-on-dark: #ffffff;
   --c-on-dark-muted: #c3cbd8;
-  --c-focus: #1b4fd8;
+  --c-focus: #2f7c11;
 
   /* Размеры */
   --container: 1200px;
@@ -255,7 +255,7 @@ legend {
 }
 
 .eyebrow--light {
-  color: #a9c1ff;
+  color: #b6eea0;
 }
 
 .badge {
@@ -501,15 +501,17 @@ legend {
   display: grid;
   place-items: center;
   width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--c-primary);
+  height: 38px;
+  color: var(--c-text);
+}
+
+.logo--light .logo__mark {
   color: #fff;
 }
 
 .logo__mark svg {
-  width: 22px;
-  height: 22px;
+  width: 36px;
+  height: 38px;
 }
 
 .logo__text {
@@ -822,8 +824,8 @@ legend {
 .hero {
   padding: 32px 0 40px;
   background:
-    radial-gradient(900px 400px at 85% -10%, #e3ebff 0%, transparent 70%),
-    linear-gradient(180deg, #f7f9fd 0%, #ffffff 100%);
+    radial-gradient(900px 400px at 85% -10%, #dcf2d2 0%, transparent 70%),
+    linear-gradient(180deg, #f8fbf6 0%, #ffffff 100%);
 }
 
 .hero__inner {
@@ -1425,11 +1427,11 @@ legend {
 @keyframes flash {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgb(27 79 216 / 0);
+    box-shadow: 0 0 0 0 rgb(47 124 17 / 0);
   }
 
   30% {
-    box-shadow: 0 0 0 4px rgb(27 79 216 / 0.35);
+    box-shadow: 0 0 0 4px rgb(47 124 17 / 0.35);
   }
 }
 
@@ -2449,7 +2451,7 @@ legend {
   padding: 28px 20px;
   border-radius: 20px;
   background:
-    radial-gradient(600px 300px at 100% 0%, rgb(27 79 216 / 0.45), transparent 70%),
+    radial-gradient(600px 300px at 100% 0%, rgb(47 124 17 / 0.45), transparent 70%),
     var(--c-dark);
   color: var(--c-on-dark);
 }
@@ -2498,7 +2500,7 @@ legend {
 }
 
 .farm :focus-visible {
-  outline-color: #a9c1ff;
+  outline-color: #b6eea0;
 }
 
 @media (min-width: 900px) {
@@ -2593,7 +2595,7 @@ legend {
 }
 
 .footer :focus-visible {
-  outline-color: #a9c1ff;
+  outline-color: #b6eea0;
 }
 
 .footer__copy {
