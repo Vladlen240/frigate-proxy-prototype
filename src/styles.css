@@ -6398,19 +6398,6 @@ body.dd-open {
     line-height: 1.55;
   }
 
-  /* Крупная полупрозрачная цифра — типографский акцент вместо картинки */
-  .why__mark {
-    position: absolute;
-    right: 28px;
-    bottom: -46px;
-    color: rgb(255 255 255 / 0.09);
-    font-size: 240px;
-    font-weight: 800;
-    line-height: 1;
-    letter-spacing: -0.05em;
-    pointer-events: none;
-    animation: reco-in 0.45s ease;
-  }
 }
 
 @keyframes why-progress {

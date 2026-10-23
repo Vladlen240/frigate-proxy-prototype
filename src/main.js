@@ -1760,8 +1760,7 @@ function updateWhy() {
       <h3 class="why__panel-title">${esc(b.title)}</h3>
       <p class="why__panel-text">${esc(b.text)}</p>
       ${b.cta === 'test' ? '<button type="button" class="why__cta" data-open-test>Получить бесплатный тест</button>' : ''}
-    </div>
-    <span class="why__mark" aria-hidden="true">${num}</span>`;
+    </div>`;
 }
 
 function bindWhy() {
