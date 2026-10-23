@@ -1658,9 +1658,9 @@ let featIndex = 0;
 let featTimer = 0;
 let featPaused = false;
 let featVisible = false;
-const FEAT_WINDOW = 3;
 
 function renderFeatures() {
+  renderWhy();
   $('#features').innerHTML = data.benefits
     .map(
       (b, i) => `<article class="feature" data-feat="${i}">
@@ -1671,7 +1671,7 @@ function renderFeatures() {
         </button>
         <div class="feature__body" id="feat-body-${i}" role="region" aria-labelledby="feat-btn-${i}">
           <p>${esc(b.text)}</p>
-          ${b.cta === 'test' ? '<button type="button" class="feature__link" data-open-test>Получить тест →</button>' : ''}
+          ${b.cta === 'test' ? '<button type="button" class="feature__link" data-open-test>Получить бесплатный тест</button>' : ''}
         </div>
       </article>`,
     )
@@ -1683,31 +1683,17 @@ function setFeature(i) {
   const n = data.benefits.length;
   featIndex = (i + n) % n;
   $$('.feature').forEach((f, k) => {
-    const pos = (k - featIndex + n) % n; // 0 — активная, 1–2 — следующие в окне
-    const on = pos === 0;
+    const on = k === featIndex;
     f.classList.toggle('is-active', on);
-    f.classList.toggle('is-off', pos >= FEAT_WINDOW);
-    f.style.order = String(pos);
     $('.feature__head', f).setAttribute('aria-expanded', String(on));
   });
-  placeFeatureNav();
+  updateWhy();
 }
 
-/* Стрелки (ПК): под первой свёрнутой карточкой, нижний край — вровень с активной */
-function placeFeatureNav() {
-  const nav = $('#feat-prev').parentElement;
-  const wrap = nav.parentElement;
-  const next = $$('.feature:not(.is-active):not(.is-off)').sort((a, b) => Number(a.style.order) - Number(b.style.order))[0];
-  const act = $('.feature.is-active');
-  if (!next || !act || getComputedStyle(nav).position !== 'absolute') return;
-  const w = wrap.getBoundingClientRect();
-  nav.style.left = `${next.getBoundingClientRect().left - w.left}px`;
-  nav.style.top = `${act.getBoundingClientRect().bottom - w.top - nav.offsetHeight}px`;
-}
-
+/* Mobile-аккордеон переключается по таймеру; на ПК — по полоске прогресса (см. bindWhy) */
 function scheduleFeature() {
   clearTimeout(featTimer);
-  if (reducedMotion.matches || featPaused || !featVisible) return;
+  if (!mqNoSidebar.matches || reducedMotion.matches || featPaused || !featVisible) return;
   featTimer = setTimeout(() => {
     setFeature(featIndex + 1);
     scheduleFeature();
@@ -1720,16 +1706,6 @@ function bindFeatures() {
     const head = e.target.closest('.feature__head');
     if (!head) return;
     setFeature(Number(head.closest('.feature').dataset.feat));
-    scheduleFeature();
-  });
-  window.addEventListener('resize', placeFeatureNav);
-  document.fonts?.ready.then(placeFeatureNav);
-  $('#feat-prev').addEventListener('click', () => {
-    setFeature(featIndex - 1);
-    scheduleFeature();
-  });
-  $('#feat-next').addEventListener('click', () => {
-    setFeature(featIndex + 1);
     scheduleFeature();
   });
   // Пауза, пока пользователь читает или работает с клавиатуры
@@ -1745,6 +1721,82 @@ function bindFeatures() {
     featVisible = en.isIntersecting;
     scheduleFeature();
   }).observe(box);
+}
+
+/* ==========================================================================
+   Преимущества на ПК: список всех пунктов слева, панель активного справа.
+   Полоска под активным пунктом показывает время до автопереключения
+   ========================================================================== */
+function renderWhy() {
+  $('#why').innerHTML = `
+    <div class="why__list" role="tablist" aria-label="Преимущества" aria-orientation="vertical">
+      ${data.benefits
+        .map(
+          (b, i) => `<button type="button" class="why__tab" role="tab" id="why-tab-${i}" data-why="${i}" aria-controls="why-panel" aria-selected="false" tabindex="-1">
+            <span class="why__num">/${String(i + 1).padStart(2, '0')}</span>
+            <span class="why__title">${esc(b.title)}</span>
+            <span class="why__progress" aria-hidden="true"><span></span></span>
+          </button>`,
+        )
+        .join('')}
+    </div>
+    <div class="why__panel" id="why-panel" role="tabpanel"></div>`;
+}
+
+function updateWhy() {
+  const panel = $('#why-panel');
+  if (!panel) return;
+  const b = data.benefits[featIndex];
+  const num = String(featIndex + 1).padStart(2, '0');
+  $$('.why__tab').forEach((t, k) => {
+    const on = k === featIndex;
+    t.setAttribute('aria-selected', String(on));
+    t.tabIndex = on ? 0 : -1;
+  });
+  panel.setAttribute('aria-labelledby', `why-tab-${featIndex}`);
+  panel.innerHTML = `
+    <div class="why__panel-inner">
+      <span class="why__panel-num">/${num}</span>
+      <h3 class="why__panel-title">${esc(b.title)}</h3>
+      <p class="why__panel-text">${esc(b.text)}</p>
+      ${b.cta === 'test' ? '<button type="button" class="why__cta" data-open-test>Получить бесплатный тест</button>' : ''}
+    </div>
+    <span class="why__mark" aria-hidden="true">${num}</span>`;
+}
+
+function bindWhy() {
+  const why = $('#why');
+  why.addEventListener('click', (e) => {
+    const tab = e.target.closest('[data-why]');
+    if (tab) setFeature(Number(tab.dataset.why));
+  });
+  why.addEventListener('keydown', (e) => {
+    if (!e.target.closest('.why__tab')) return;
+    const n = data.benefits.length;
+    let i = featIndex;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') i += 1;
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') i -= 1;
+    else if (e.key === 'Home') i = 0;
+    else if (e.key === 'End') i = n - 1;
+    else return;
+    e.preventDefault();
+    setFeature(i);
+    $(`#why-tab-${featIndex}`).focus();
+  });
+  // Автопереключение: полоска прогресса активного пункта дошла до конца
+  why.addEventListener('animationend', (e) => {
+    const tab = e.target.closest('.why__tab');
+    if (tab && e.target.parentElement.classList.contains('why__progress') && tab.getAttribute('aria-selected') === 'true') {
+      setFeature(featIndex + 1);
+    }
+  });
+  // Пауза: курсор над блоком, фокус внутри или блок вне экрана
+  const flag = (cls, v) => () => why.classList.toggle(cls, v);
+  why.addEventListener('pointerenter', flag('is-hover', true));
+  why.addEventListener('pointerleave', flag('is-hover', false));
+  why.addEventListener('focusin', flag('is-focus', true));
+  why.addEventListener('focusout', flag('is-focus', false));
+  new IntersectionObserver(([en]) => why.classList.toggle('is-offscreen', !en.isIntersecting)).observe(why);
 }
 
 /* ==========================================================================
@@ -2018,6 +2070,7 @@ bindHeader();
 bindQuickbuy();
 bindDropdowns();
 bindFeatures();
+bindWhy();
 bindProduct();
 initHeroCanvas();
 bindConfig();
