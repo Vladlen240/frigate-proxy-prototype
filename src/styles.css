@@ -8,12 +8,15 @@
 
   /* Цвета (контраст текста — не ниже AA) */
   --c-bg: #ffffff;
-  --c-bg-soft: #f4f6fa;
+  /* Серый — нейтральный, без голубизны. Плитки и кнопки на белом — заметнее (#f3f4f5);
+     фон серых секций — едва темнее белого, как у Proxy-Seller (#fcfcfc / #f5f6f7) */
+  --c-bg-soft: #f3f4f5;
+  --c-section-soft: #fafafa;
   --c-surface: #ffffff;
   --c-text: #0e1726;
   --c-muted: #4f5a6b;
-  --c-border: #d9dfe8;
-  --c-border-strong: #b6c0ce;
+  --c-border: #dfe1e4;
+  --c-border-strong: #bfc3c9;
   --c-primary: #2f7c11;
   --c-primary-hover: #25610d;
   --c-primary-soft: #ecf8e7;
@@ -1036,7 +1039,7 @@ legend {
 }
 
 .section--soft {
-  background: var(--c-bg-soft);
+  background: var(--c-section-soft);
 }
 
 .section__head {
@@ -1115,6 +1118,12 @@ legend {
 .task[aria-pressed='true'] .task__icon {
   background: var(--c-primary);
   color: #fff;
+}
+
+/* Стрелка и галочка в углу карточки — только на ПК */
+.task__mark,
+.reco__empty {
+  display: none;
 }
 
 @media (min-width: 640px) {
@@ -1225,6 +1234,226 @@ legend {
 .picker__help {
   margin-top: 20px;
   color: var(--c-muted);
+}
+
+/* ПК (от 1024 px): задачи 2×3 слева, рекомендация справа — страница не прыгает при выборе.
+   Карточки с заливкой, без обводки. Наведение и выбор — зелёная заливка, текст и иконки белые.
+   Mobile и планшет пока не меняем — они будут переделываться отдельно */
+@media (min-width: 1024px) {
+  .picker {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 24px;
+  }
+
+  .tasks {
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: 1fr;
+    gap: 16px;
+  }
+
+  /* Высота с запасом под самую длинную рекомендацию — при смене задачи блок не меняет высоту */
+  .task {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto 1fr;
+    align-items: start;
+    gap: 16px 12px;
+    min-height: 184px;
+    padding: 24px;
+    border: 0;
+    border-radius: 20px;
+    background: var(--c-bg-soft);
+    color: var(--c-text);
+    font-size: 18px;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease,
+      transform 0.15s ease;
+  }
+
+  .task:active {
+    transform: scale(0.98);
+  }
+
+  .task__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: #fff;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .task__icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .task__title {
+    grid-column: 1 / -1;
+    align-self: end;
+  }
+
+  /* Угол карточки: стрелка «перейти», у выбранной — галочка в белом круге */
+  .task__mark {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    color: var(--c-muted);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  .task__mark svg {
+    grid-area: 1 / 1;
+    width: 18px;
+    height: 18px;
+  }
+
+  .task__mark svg:last-child {
+    display: none;
+  }
+
+  .task[aria-pressed='true'] {
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  .task[aria-pressed='true'] .task__icon {
+    background: rgb(255 255 255 / 0.16);
+    color: #fff;
+  }
+
+  .task[aria-pressed='true'] .task__mark {
+    background: #fff;
+    color: var(--c-primary);
+  }
+
+  .task[aria-pressed='true'] .task__mark svg:first-child {
+    display: none;
+  }
+
+  .task[aria-pressed='true'] .task__mark svg:last-child {
+    display: block;
+  }
+
+  .reco {
+    display: flex;
+    margin-top: 0;
+  }
+
+  .reco__placeholder {
+    display: none;
+  }
+
+  .reco__empty {
+    display: grid;
+    flex: 1;
+    place-content: center;
+    gap: 8px;
+    padding: 40px;
+    border-radius: 24px;
+    background: var(--c-bg-soft);
+    color: var(--c-muted);
+    text-align: center;
+  }
+
+  .reco__empty p {
+    max-width: 30ch;
+    margin-inline: auto;
+  }
+
+  .reco__empty-title {
+    color: var(--c-text);
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  /* Рекомендация: заливка без обводки, цена и кнопка прижаты к низу */
+  .reco__card {
+    flex: 1;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: space-between;
+    gap: 32px;
+    padding: 40px;
+    border: 0;
+    border-radius: 24px;
+    background: var(--c-bg-soft);
+    box-shadow: none;
+  }
+
+  .reco__title {
+    margin-top: 8px;
+    font-size: 26px;
+    line-height: 1.15;
+  }
+
+  .reco__why {
+    margin-top: 12px;
+    line-height: 1.55;
+  }
+
+  .reco__facts {
+    margin-top: 20px;
+  }
+
+  .reco__facts li {
+    padding: 6px 12px;
+    background: #fff;
+  }
+
+  .reco__alt {
+    margin-top: 16px;
+  }
+
+  .reco__side {
+    justify-items: center;
+  }
+
+  .reco__price {
+    justify-self: start;
+  }
+
+  .reco__price b {
+    font-size: 32px;
+  }
+
+  .picker__help {
+    margin-top: 32px;
+  }
+}
+
+/* Наведение только мышью: зелёная заливка, текст и иконки белые */
+@media (min-width: 1024px) and (hover: hover) {
+  .task:hover {
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  .task:hover .task__icon {
+    background: rgb(255 255 255 / 0.16);
+    color: #fff;
+  }
+
+  .task:hover .task__mark {
+    color: #fff;
+    transform: translateX(3px);
+  }
+
+  .task[aria-pressed='true']:hover .task__mark {
+    color: var(--c-primary);
+    transform: none;
+  }
 }
 
 /* ---------- 5. Сравнение ---------- */
@@ -6283,7 +6512,6 @@ body.dd-open {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    border-top: 1px solid var(--c-border);
   }
 
   .why__tab {
@@ -6356,13 +6584,13 @@ body.dd-open {
     animation-play-state: paused;
   }
 
-  /* Панель активного пункта */
+  /* Панель активного пункта: номер — в углу, заголовок — по центру, текст — внизу.
+     Отступ от краёв панели — 40 px со всех сторон */
   .why__panel {
     position: relative;
     display: flex;
-    align-items: center;
-    min-height: 420px;
-    padding: 56px 60px;
+    min-height: 480px;
+    padding: 40px;
     overflow: hidden;
     border-radius: 24px;
     background:
@@ -6374,24 +6602,32 @@ body.dd-open {
   .why__panel-inner {
     position: relative;
     z-index: 1;
+    display: grid;
+    grid-template-rows: 1fr auto 1fr;
+    gap: 32px;
+    flex: 1;
     animation: reco-in 0.35s ease;
   }
 
   .why__panel-num {
+    align-self: start;
     color: var(--c-accent-light);
     font-size: 15px;
     font-weight: 600;
+    line-height: 1;
+  }
+
+  .why__panel-foot {
+    align-self: end;
   }
 
   .why__panel-title {
-    margin-top: 14px;
     max-width: 16ch;
     font-size: 36px;
     line-height: 1.12;
   }
 
   .why__panel-text {
-    margin-top: 18px;
     max-width: 40ch;
     color: rgb(255 255 255 / 0.92);
     font-size: 18px;
@@ -6444,4 +6680,4651 @@ body.dd-open {
 .feature__link:focus-visible {
   outline: 3px solid #fff;
   outline-offset: 3px;
+}
+
+/* ==========================================================================
+   «Типы прокси» на ПК — зелёная секция-перебивка.
+   На зелёном фоне инверсия наоборот: плитки — полупрозрачная белая заливка,
+   наведение — плотнее, выбор — белая плитка с тёмным текстом.
+   Карточка типа — белая, с воздухом; высота не меняется при смене вкладки
+   ========================================================================== */
+@media (min-width: 1024px) {
+  .section--green {
+    padding-block: 96px;
+    background:
+      radial-gradient(900px 480px at 100% 0%, rgb(255 255 255 / 0.1), transparent 70%),
+      var(--c-primary);
+    color: #fff;
+  }
+
+  .section--green .section__head {
+    margin-bottom: 40px;
+  }
+
+  .section--green .section__lead {
+    color: rgb(255 255 255 / 0.85);
+  }
+
+  .section--green :focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
+  }
+
+  .section--green .product :focus-visible,
+  .section--green .compare-all__body :focus-visible {
+    outline-color: var(--c-ink);
+  }
+
+  /* Вкладки типов: отдельные плитки с заливкой, без общей рамки */
+  .section--green .ptabs {
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+
+  .section--green .ptab {
+    justify-content: center;
+    gap: 6px;
+    min-height: 88px;
+    padding: 18px 22px;
+    border-radius: 18px;
+    background: rgb(255 255 255 / 0.12);
+    color: #fff;
+    font-size: 17px;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .section--green .ptab__price {
+    color: rgb(255 255 255 / 0.75);
+    font-size: 14px;
+    transition: color 0.2s ease;
+  }
+
+  .section--green .ptab[aria-selected='true'] {
+    background: #fff;
+    color: var(--c-text);
+  }
+
+  .section--green .ptab[aria-selected='true'] .ptab__price {
+    color: var(--c-primary-ink);
+  }
+
+  /* Карточка типа */
+  .section--green .product {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 56px;
+    padding: 48px;
+    border: 0;
+    border-radius: 28px;
+    background: #fff;
+    color: var(--c-text);
+    box-shadow: 0 24px 60px rgb(10 40 0 / 0.18);
+  }
+
+  .section--green .product__main,
+  .section--green .product__stats {
+    animation: reco-in 0.3s ease;
+  }
+
+  .section--green .product__main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .section--green .product__title {
+    margin-top: 16px;
+    font-size: 34px;
+    line-height: 1.12;
+  }
+
+  /* Без бейджа заголовок — вровень с верхом плиток */
+  .section--green .product__title:first-child {
+    margin-top: 0;
+  }
+
+  .section--green .product__desc {
+    margin-top: 16px;
+    max-width: 46ch;
+    font-size: 18px;
+    line-height: 1.6;
+  }
+
+  .section--green .product__best-title {
+    margin-top: 32px;
+    font-size: 17px;
+  }
+
+  .section--green .product__best {
+    gap: 12px;
+    margin-top: 14px;
+    font-size: 17px;
+  }
+
+  .section--green .product__best li {
+    gap: 12px;
+  }
+
+  .section--green .product__best svg {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--c-primary-soft);
+  }
+
+  /* Кнопки прижаты к низу колонки — на всех вкладках на одной высоте */
+  .section--green .product__actions {
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 40px;
+  }
+
+  /* Вторые кнопки (в карточке и в таблице) — заливка вместо обводки, наведение — зелёное */
+  .section--green .product__actions .btn--outline,
+  .section--green .compare .btn--outline {
+    border-color: transparent;
+    background: var(--c-bg-soft);
+    color: var(--c-text);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  /* Цифры: сетка от верха «Популярный выбор» до низа кнопки «Купить».
+     В плитке подпись — сверху, значение — снизу, отступы 20 px; значок «i» — справа, 20 px от края */
+  .section--green .product__stats {
+    grid-auto-rows: 1fr;
+    gap: 12px;
+    align-self: stretch;
+  }
+
+  .section--green .stat {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px;
+    border-radius: 20px;
+  }
+
+  .section--green .stat__label {
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 15px;
+    line-height: 18px;
+  }
+
+  .section--green .stat__label .tip {
+    flex: none;
+    margin-left: 0;
+  }
+
+  .section--green .stat__value {
+    margin-top: 0;
+    font-size: 21px;
+  }
+
+  /* «Сравнить все типы в таблице» — белая полупрозрачная кнопка */
+  .section--green .compare-all {
+    margin-top: 40px;
+  }
+
+  .section--green .compare-all > summary {
+    min-height: 56px;
+    padding-inline: 28px;
+    border-color: transparent;
+    background: rgb(255 255 255 / 0.12);
+    color: #fff;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .section--green .compare-all[open] > summary {
+    background: #fff;
+    color: var(--c-primary-ink);
+  }
+
+  .section--green .compare-all__body {
+    margin-top: 32px;
+  }
+
+  .section--green .compare {
+    border: 0;
+    border-radius: 24px;
+    overflow: hidden;
+    color: var(--c-text);
+  }
+
+  /* Центральная композиция: таблица и сноска — по центру */
+  .section--green .compare th,
+  .section--green .compare td {
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .section--green .footnote {
+    color: rgb(255 255 255 / 0.85);
+    text-align: center;
+  }
+
+  .section--green .compare__more {
+    margin-top: 24px;
+  }
+
+  /* «Подробнее о каждом типе →»: без подчёркивания; при наведении линия
+     прорисовывается слева направо, стрелка сдвигается */
+  .section--green .compare__more .link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding-block: 8px;
+    color: #fff;
+    font-size: 17px;
+    text-decoration: none;
+  }
+
+  .section--green .compare__more .link__text {
+    background: linear-gradient(currentColor, currentColor) left bottom / 0 1.5px no-repeat;
+    padding-bottom: 2px;
+    transition: background-size 0.3s ease;
+  }
+
+  .section--green .compare__more .link__arrow {
+    transition: transform 0.3s ease;
+  }
+
+  /* Обе кнопки в один ряд на всех вкладках, включая «Попробовать 7 дней бесплатно» */
+  .section--green .product__actions .btn {
+    padding-inline: 24px;
+    font-size: 17px;
+  }
+}
+
+/* Узкий ПК: плотнее, чтобы вкладки и карточка помещались в экран */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .section--green .product {
+    gap: 40px;
+    padding: 40px;
+  }
+
+  .section--green .product__title {
+    font-size: 30px;
+  }
+
+  .section--green .product__desc,
+  .section--green .product__best {
+    font-size: 16px;
+  }
+
+  .section--green .product__best-title {
+    margin-top: 24px;
+  }
+
+  .section--green .product__actions {
+    padding-top: 32px;
+  }
+
+  .section--green .product__actions .btn {
+    min-height: 56px;
+    padding-inline: 20px;
+    font-size: 16px;
+  }
+
+  .section--green .stat__value {
+    font-size: 19px;
+  }
+
+  .section--green .ptab {
+    padding: 16px 18px;
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .section--green .ptab:not([aria-selected='true']):hover {
+    background: rgb(255 255 255 / 0.22);
+  }
+
+  .section--green .product__actions .btn--outline:hover,
+  .section--green .compare .btn--outline:hover {
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  .section--green .compare-all > summary:hover {
+    background: #fff;
+    color: var(--c-primary-ink);
+  }
+
+  .section--green .compare__more .link:hover .link__text {
+    background-size: 100% 1.5px;
+  }
+
+  .section--green .compare__more .link:hover .link__arrow {
+    transform: translateX(4px);
+  }
+}
+
+/* ==========================================================================
+   ПК: заказ только в форме первого экрана — блок «Настройте заказ» скрыт.
+   Его логика (расчёт, купон, корзина, оформление) работает через форму.
+   В плашке «Общая стоимость»: цена за день, «Есть купон?» и «В корзину»
+   ========================================================================== */
+.qb-desk {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  #buy {
+    display: none;
+  }
+
+  .qb-desk {
+    display: inline;
+  }
+
+  .qb-mob {
+    display: none;
+  }
+
+  .qb-tools {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 20px;
+    margin-left: auto;
+  }
+
+  .qb-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--c-accent-light);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .qb-link svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .qb-link:hover {
+    color: #fff;
+  }
+
+  .qb-coupon {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+  }
+
+  .qb-coupon--ok {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .qb-coupon--ok svg {
+    width: 16px;
+    height: 16px;
+    color: var(--c-accent-light);
+  }
+
+  .qb-coupon--ok .qb-link {
+    margin-left: 4px;
+    font-weight: 500;
+  }
+
+  .qb-coupon__input {
+    width: 150px;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid rgb(255 255 255 / 0.2);
+    border-radius: 10px;
+    background: rgb(255 255 255 / 0.08);
+    color: #fff;
+    font: inherit;
+    font-size: 14px;
+    text-transform: uppercase;
+  }
+
+  .qb-coupon__input::placeholder {
+    color: var(--c-hero-muted);
+    text-transform: none;
+  }
+
+  .qb-coupon__input:focus {
+    border-color: var(--c-accent-light);
+    outline: none;
+  }
+
+  .qb-coupon__input[aria-invalid='true'] {
+    border-color: #f2a39b;
+  }
+
+  .qb-coupon__apply {
+    height: 36px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 10px;
+    background: #fff;
+    color: var(--c-ink);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .qb-coupon__apply:hover {
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  .qb-coupon__msg {
+    flex-basis: 100%;
+    color: #f2a39b;
+    font-size: 13px;
+  }
+
+  /* Переход к форме с любой кнопки «Выбрать» / «Применить» — короткая подсветка плашек */
+  .quickbuy.is-flash .quickbuy__field,
+  .quickbuy.is-flash .quickbuy__total {
+    animation: qb-flash 1.2s ease;
+  }
+}
+
+@keyframes qb-flash {
+  0%,
+  100% {
+    border-color: rgb(255 255 255 / 0.1);
+  }
+
+  30% {
+    border-color: var(--c-accent-light);
+  }
+}
+
+/* ==========================================================================
+   «Типы прокси» на ПК — ровно на экран (100svh минус шапка), содержимое по центру,
+   сверху и снизу равные отступы. Большие плашки — 40 px внутри, маленькие — 20 px.
+   «Сравнить все типы» и «Подробнее о каждом типе» — в одном ряду
+   ========================================================================== */
+@media (min-width: 1024px) {
+  .section--green {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: calc(100svh - var(--header-h));
+    padding-block: 40px;
+  }
+
+  .section--green > .container {
+    display: grid;
+    grid-template-columns: 1fr auto auto 1fr;
+    column-gap: 24px;
+    width: 100%;
+  }
+
+  .section--green > .container > * {
+    grid-column: 1 / -1;
+  }
+
+  .section--green .section__head {
+    margin-bottom: 32px;
+  }
+
+  .section--green .ptabs {
+    margin-bottom: 20px;
+  }
+
+  .section--green .ptab {
+    min-height: 0;
+    padding: 20px;
+  }
+
+  .section--green .product {
+    gap: 40px;
+    padding: 40px;
+  }
+
+  .section--green .product__desc {
+    margin-top: 12px;
+  }
+
+  .section--green .product__best-title {
+    margin-top: 24px;
+  }
+
+  .section--green .product__actions {
+    padding-top: 32px;
+  }
+
+  .section--green .compare-all {
+    grid-column: 2;
+    margin-top: 32px;
+  }
+
+  .section--green .compare__more {
+    grid-column: 3;
+    align-self: start;
+    display: flex;
+    align-items: center;
+    min-height: 56px;
+    margin-top: 32px;
+  }
+
+  /* Открытая таблица — на всю ширину, ссылка уходит под неё */
+  .section--green .compare-all[open] {
+    grid-column: 1 / -1;
+  }
+
+  .section--green .compare-all[open] + .compare__more {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+}
+
+/* «Типы прокси»: плотнее, чтобы блок помещался в экран ноутбука (1440×900) */
+@media (min-width: 1024px) {
+  .section--green .section__head {
+    margin-bottom: 28px;
+  }
+
+  .section--green .ptab {
+    padding: 16px 20px;
+  }
+
+  .section--green .product__title {
+    font-size: 30px;
+  }
+
+  .section--green .product__title:not(:first-child) {
+    margin-top: 12px;
+  }
+
+  .section--green .product__desc {
+    font-size: 16px;
+    line-height: 1.55;
+  }
+
+  .section--green .product__best-title {
+    margin-top: 20px;
+    font-size: 16px;
+  }
+
+  .section--green .product__best {
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 16px;
+  }
+
+  .section--green .product__actions {
+    padding-top: 28px;
+  }
+
+  .section--green .product__actions .btn {
+    min-height: 56px;
+  }
+
+  .section--green .stat__value {
+    font-size: 19px;
+  }
+
+  .section--green .compare-all,
+  .section--green .compare__more {
+    margin-top: 28px;
+  }
+}
+
+/* Плашка стоимости на ПК: строка «количество · купон · корзина» не переносится,
+   ошибка купона — под полем поверх нижнего отступа. Плашка не меняет высоту, экран не скачет */
+@media (min-width: 1024px) {
+  .quickbuy__extra {
+    flex-wrap: nowrap;
+    min-height: 40px;
+    white-space: nowrap;
+  }
+
+  .qb-tools {
+    flex-wrap: nowrap;
+  }
+
+  .qb-coupon {
+    position: relative;
+    flex-wrap: nowrap;
+  }
+
+  .qb-coupon__msg {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Место под строку ошибки купона внутри плашки */
+  .quickbuy__total {
+    padding-bottom: 32px;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* «Типы прокси» шириной как форма первого экрана — края страницы на одной линии, больше воздуха */
+  .section--green > .container {
+    max-width: calc(max(var(--container), 70vw) + var(--gutter) * 2);
+  }
+
+  /* «Популярный выбор» — с воздухом, как у кнопок */
+  .section--green .product .badge {
+    padding: 6px 14px;
+    font-size: 13px;
+    line-height: 1.2;
+  }
+}
+
+/* Невысокие экраны ПК (ноутбуки 1440×900): «Типы прокси» плотнее по вертикали, чтобы влезть в экран.
+   Внутренние отступы плашек (40 / 20 px) не меняются */
+@media (min-width: 1024px) and (max-height: 940px) {
+  .section--green .section__head {
+    margin-bottom: 20px;
+  }
+
+  .section--green .ptab {
+    padding-block: 12px;
+  }
+
+  .section--green .ptabs {
+    margin-bottom: 16px;
+  }
+
+  .section--green .product__title {
+    font-size: 28px;
+  }
+
+  .section--green .product__title:not(:first-child),
+  .section--green .product__desc {
+    margin-top: 8px;
+  }
+
+  .section--green .product__best-title {
+    margin-top: 16px;
+  }
+
+  .section--green .product__best {
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .section--green .product__actions {
+    padding-top: 24px;
+  }
+
+  .section--green .compare-all,
+  .section--green .compare__more {
+    margin-top: 20px;
+  }
+}
+
+/* Рекомендация в «Для чего вам прокси?»: цена — в кнопке («Выбрать от 40 ₽», как «Купить от 290 ₽» в типах),
+   между строками — воздух. Mobile — прежний вид */
+.reco__btn-price {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .reco__btn-tail,
+  .reco__price {
+    display: none;
+  }
+
+  .reco__btn-price {
+    display: inline;
+  }
+
+  .reco__card .btn--lg {
+    min-height: 60px;
+    font-size: 18px;
+  }
+
+  .reco__eyebrow {
+    font-size: 15px;
+  }
+
+  .reco__title {
+    margin-top: 14px;
+  }
+
+  .reco__why {
+    margin-top: 16px;
+  }
+
+  .reco__facts {
+    gap: 10px;
+    margin-top: 24px;
+  }
+
+  .reco__facts li {
+    padding: 8px 14px;
+  }
+
+  .reco__alt {
+    margin-top: 20px;
+    line-height: 1.55;
+  }
+
+  .reco__side {
+    gap: 16px;
+  }
+
+  .task {
+    min-height: 200px;
+  }
+}
+
+/* ПК: расстояние между блоками ≈ 250 px — по 125 px сверху и снизу у каждой секции.
+   «Типы прокси» — на высоту экрана, со своими равными отступами внутри */
+@media (min-width: 1024px) {
+  :root {
+    --section-y: 125px;
+  }
+
+  .section--tight {
+    padding-top: var(--section-y);
+  }
+
+  .trust {
+    padding-bottom: var(--section-y);
+  }
+}
+
+/* «Есть купон?» и «В корзину» — кнопки-плашки высотой как счётчик количества:
+   заливка, иконка, наведение — зелёная заливка и белый текст */
+@media (min-width: 1024px) {
+  .qb-tools {
+    gap: 8px;
+  }
+
+  .qb-tools .qb-link {
+    gap: 8px;
+    height: 40px;
+    min-height: 0;
+    padding: 0 16px;
+    border-radius: 10px;
+    background: rgb(255 255 255 / 0.08);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .qb-tools .qb-link svg {
+    color: var(--c-accent-light);
+    transition: color 0.2s ease;
+  }
+
+  .qb-tools .qb-link:hover {
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  .qb-tools .qb-link:hover svg {
+    color: #fff;
+  }
+
+  .qb-tools .qb-link.is-done {
+    background: rgb(182 238 160 / 0.16);
+    color: var(--c-accent-light);
+  }
+
+  /* Применённый купон — плашка той же высоты, «Убрать» внутри */
+  .qb-coupon--ok {
+    gap: 8px;
+    height: 40px;
+    padding: 0 6px 0 14px;
+    border-radius: 10px;
+    background: rgb(182 238 160 / 0.14);
+    font-size: 14px;
+  }
+
+  .qb-coupon--ok .qb-link {
+    height: 28px;
+    margin-left: 4px;
+    padding: 0 10px;
+    border-radius: 8px;
+    background: rgb(255 255 255 / 0.1);
+    color: #fff;
+    font-size: 13px;
+  }
+
+  .qb-coupon__input,
+  .qb-coupon__apply {
+    height: 40px;
+  }
+}
+
+/* ==========================================================================
+   Шапка на ПК — плавающая стеклянная плашка: 40 px от верха и боков, закреплена.
+   Стекло тёмное полупрозрачное — читается и над первым экраном, и над белыми блоками.
+   --header-h на ПК = 40 px отступа + 72 px плашки: от него считаются якоря, всплывашки и «Типы прокси»
+   ========================================================================== */
+@media (min-width: 1024px) {
+  :root {
+    --header-gap: 40px;
+    --header-bar: 72px;
+    --header-h: calc(var(--header-gap) + var(--header-bar));
+  }
+
+  .header {
+    position: fixed;
+    top: var(--header-gap);
+    left: var(--header-gap);
+    right: var(--header-gap);
+    isolation: isolate;
+    border: 1px solid rgb(255 255 255 / 0.12);
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgb(30 41 58 / 0.82), rgb(18 28 42 / 0.82));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      0 12px 32px rgb(0 0 0 / 0.25);
+  }
+
+  .header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    backdrop-filter: blur(16px) saturate(1.3);
+  }
+
+  .header > .header__inner {
+    max-width: none;
+    height: var(--header-bar);
+    padding-inline: 24px;
+  }
+
+  /* Первый экран под плавающей шапкой: на всю высоту окна, содержимое ниже шапки */
+  .hero {
+    min-height: 100vh;
+    min-height: 100svh;
+    padding-top: calc(var(--header-h) + clamp(16px, 3vh, 40px));
+  }
+
+  /* «Купить прокси» в шапке: заливка вместо обводки, наведение — зелёная заливка */
+  .header .header__cta {
+    min-height: 44px;
+    padding-inline: 20px;
+    border-color: transparent;
+    border-radius: 12px;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .header .header__cta.btn--outline {
+    background: rgb(255 255 255 / 0.1);
+    color: #fff;
+  }
+
+  .header .header__cta.btn--outline:hover,
+  .header .header__cta.btn--primary:hover {
+    border-color: transparent;
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  .header .header__cta.btn--primary {
+    background: var(--c-primary);
+  }
+
+  .header .header__cta.btn--primary:hover {
+    background: var(--c-primary-hover);
+  }
+
+  .header .lang {
+    border-color: rgb(255 255 255 / 0.14);
+  }
+
+  .header .cart-btn__count {
+    border-color: rgb(24 34 50);
+  }
+}
+
+@media (min-width: 1280px) {
+  .header > .header__inner {
+    padding-inline: 40px;
+  }
+}
+
+/* Невысокие экраны ПК после плавающей шапки (под блок остаётся 100svh − 112 px):
+   ещё немного плотнее по вертикали, внутренние отступы плашек 40 / 20 px не трогаем */
+@media (min-width: 1024px) and (max-height: 940px) {
+  .section--green .section__head {
+    margin-bottom: 16px;
+  }
+
+  .section--green .section__lead {
+    margin-top: 4px;
+  }
+
+  .section--green .ptab {
+    padding-block: 10px;
+    font-size: 15px;
+  }
+
+  .section--green .ptabs {
+    margin-bottom: 12px;
+  }
+
+  .section--green .product__title {
+    font-size: 26px;
+  }
+
+  .section--green .product__desc,
+  .section--green .product__best {
+    font-size: 15px;
+  }
+
+  .section--green .product__desc {
+    line-height: 1.5;
+  }
+
+  .section--green .product__best {
+    gap: 4px;
+  }
+
+  .section--green .product__actions {
+    padding-top: 20px;
+  }
+
+  .section--green .compare-all,
+  .section--green .compare__more {
+    margin-top: 16px;
+  }
+}
+
+/* Шапка на ПК с видимым меню: логотип слева, пункты меню ровно по центру плашки, кнопки справа */
+@media (min-width: 1120px) {
+  .header > .header__inner {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+  }
+
+  .header .logo {
+    justify-self: start;
+    margin-right: 0;
+  }
+
+  .header .header__actions {
+    justify-self: end;
+    margin-left: 0;
+  }
+}
+
+/* «Блог» и «О нас» — прямо в меню там, где хватает места; «Ещё» тогда не нужен */
+.nav__inline-extra {
+  display: none;
+}
+
+@media (min-width: 1720px) {
+  .nav__inline-extra {
+    display: list-item;
+  }
+
+  .nav__more {
+    display: none;
+  }
+}
+
+/* Шапка: чуть больше воздуха между пунктами меню и между элементами справа */
+@media (min-width: 1120px) {
+  .header .nav__list {
+    gap: 4px;
+  }
+
+  .header .nav__link {
+    padding: 10px 14px;
+  }
+
+  .header .header__actions {
+    gap: 14px;
+  }
+}
+
+@media (min-width: 1120px) and (max-width: 1439px) {
+  .header .nav__link {
+    padding-inline: 10px;
+  }
+
+  .header .header__actions {
+    gap: 10px;
+  }
+}
+
+/* Таблица сравнения: от края до содержимого — 40 px сверху и 40 px снизу, внутри шапки и строки кнопок — поровну */
+@media (min-width: 1024px) {
+  /* 37 + 3 px межстрочного интервала над бейджем = ровно 40 px до бейджа */
+  .section--green .compare thead th {
+    padding-top: 37px;
+    padding-bottom: 20px;
+  }
+
+  .section--green .compare tfoot td {
+    padding-top: 20px;
+    padding-bottom: 40px;
+  }
+}
+
+/* ==========================================================================
+   Баланс строк, как кнопка Balance во Framer: короткие тексты переносятся ровными строками,
+   у абзацев последняя строка не остаётся из одного слова
+   ========================================================================== */
+h1,
+h2,
+h3,
+th,
+td,
+.badge,
+.btn,
+.stat__label,
+.stat__value,
+.ptab,
+.task__title,
+.why__title,
+.why__panel-title,
+.reco__title,
+.reco__eyebrow,
+.product__title,
+.section__lead,
+.hero__sub,
+.footnote {
+  text-wrap: balance;
+}
+
+p,
+li,
+dd {
+  text-wrap: pretty;
+}
+
+/* Ячейки таблицы сравнения — как маленькие плашки: по 20 px от краёв, текст не липнет */
+@media (min-width: 1024px) {
+  .section--green .compare th,
+  .section--green .compare td {
+    padding-inline: 20px;
+  }
+}
+
+/* «Подробнее о каждом типе»: стрелку пока не показываем — только подчёркивание при наведении */
+@media (min-width: 1024px) {
+  .section--green .compare__more .link__arrow {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   «Как это работает» на ПК — в духе proxy-seller: нумерация «/01», конкретные цифры на виду,
+   понятное действие после объяснения. Шкала «0 → ≈ 10 мин» заполняется, шаги отмечаются по очереди.
+   Карточки — заливка без обводки, наведение — зелёная заливка, текст белый. Mobile — прежний вид
+   ========================================================================== */
+.steps-track,
+.steps__index,
+.steps__time,
+.steps-cta {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .steps-track {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 24px;
+    color: var(--c-muted);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .steps-track__bar {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgb(14 23 38 / 0.08);
+  }
+
+  .steps-track__fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--c-primary);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 2.4s linear;
+  }
+
+  #how.is-run .steps-track__fill {
+    transform: scaleX(1);
+  }
+
+  .steps {
+    gap: 16px;
+  }
+
+  .steps__item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto 1fr auto auto;
+    align-items: start;
+    min-height: 280px;
+    padding: 40px;
+    border: 0;
+    border-radius: 24px;
+    background: var(--c-surface);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .steps__item:not(:last-child)::after {
+    content: none;
+  }
+
+  .steps__num {
+    display: none;
+  }
+
+  .steps__index {
+    display: block;
+    color: var(--c-primary);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 28px;
+    transition: color 0.2s ease;
+  }
+
+  /* Время шага — маленькая плашка; когда шкала дошла до шага — зелёная с галочкой */
+  .steps__time {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: var(--c-bg-soft);
+    color: var(--c-muted);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
+  }
+
+  .steps__item.is-done .steps__time {
+    background: var(--c-primary-soft);
+    color: var(--c-primary-ink);
+  }
+
+  .steps__item.is-done .steps__time::before {
+    content: '✓';
+  }
+
+  .steps__item h3 {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    font-size: 22px;
+    line-height: 1.2;
+  }
+
+  .steps__item p {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    margin-top: 10px;
+    font-size: 16px;
+    line-height: 1.55;
+    transition: color 0.2s ease;
+  }
+
+  .steps-cta {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 40px;
+  }
+
+  .steps-cta__test {
+    background: var(--c-surface);
+    color: var(--c-text);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .steps__item:hover {
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  .steps__item:hover p,
+  .steps__item:hover .steps__index,
+  .steps__item:hover .link {
+    color: #fff;
+  }
+
+  .steps__item:hover .steps__time {
+    background: rgb(255 255 255 / 0.16);
+    color: #fff;
+  }
+
+  .steps-cta__test:hover {
+    background: var(--c-primary);
+    color: #fff;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .steps-track__fill {
+    transition: none;
+  }
+}
+
+/* «Как это работает»: заголовки шагов на одной линии во всех карточках, разная длина текста не сдвигает их */
+@media (min-width: 1024px) {
+  .steps__item {
+    grid-template-rows: auto auto 1fr;
+    min-height: 0;
+  }
+
+  .steps__item h3 {
+    grid-row: 2;
+    margin-top: 72px;
+  }
+
+  .steps__item p {
+    grid-row: 3;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .steps__item.is-done:hover .steps__time {
+    background: rgb(255 255 255 / 0.16);
+    color: #fff;
+  }
+}
+
+/* «Как это работает»: активный шаг загорается зелёным, шкала растёт до его накопленного времени,
+   над краем шкалы — метка «N мин». Ссылка «Инструкции по настройке» не рвётся на две строки */
+@media (min-width: 1024px) {
+  .steps-track {
+    padding-top: 36px;
+  }
+
+  .steps-track__scale {
+    position: relative;
+  }
+
+  .steps-track__bar {
+    display: block;
+  }
+
+  .steps-track__fill {
+    transition: transform 0.6s ease;
+  }
+
+  .steps-track__now {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 0;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--c-primary);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    transform: translateX(-50%);
+    transition: left 0.6s ease;
+  }
+
+  /* Метка у правого края не вылезает за шкалу */
+  .steps-track__now[style*='left: 100%'] {
+    transform: translateX(-100%);
+  }
+
+  .steps-track__now[hidden] {
+    display: none;
+  }
+
+  .steps__item.is-active {
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  .steps__item.is-active p,
+  .steps__item.is-active .steps__index,
+  .steps__item.is-active .link {
+    color: #fff;
+  }
+
+  .steps__item.is-active .steps__time,
+  .steps__item.is-active.is-done .steps__time {
+    background: rgb(255 255 255 / 0.16);
+    color: #fff;
+  }
+
+  .steps__item .link {
+    display: inline-block;
+    white-space: nowrap;
+  }
+}
+
+/* Наведение теперь задаёт активный шаг из скрипта — отдельная зелёная заливка по :hover не нужна */
+@media (min-width: 1024px) and (hover: hover) {
+  .steps__item:not(.is-active):hover {
+    background: var(--c-surface);
+    color: inherit;
+  }
+
+  .steps__item:not(.is-active):hover p {
+    color: var(--c-muted);
+  }
+
+  .steps__item:not(.is-active):hover .steps__index,
+  .steps__item:not(.is-active):hover .link {
+    color: var(--c-primary);
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Текст шагов — сбалансированные строки; ссылка «Инструкции по настройке» — отдельной строкой целиком */
+  .steps__item p {
+    text-wrap: balance;
+  }
+
+  .steps__item .link {
+    display: table;
+    margin-top: 8px;
+  }
+}
+
+/* ==========================================================================
+   «Типы прокси» — честные 100svh под плавающей шапкой: секция ровно в окно,
+   содержимое от 40 px под шапкой до 40 px над низом окна, карточка забирает всё свободное место.
+   Переход по ссылке ставит секцию ровно в экран
+   ========================================================================== */
+@media (min-width: 1024px) {
+  .section--green {
+    min-height: 100vh;
+    min-height: 100svh;
+    padding-top: calc(var(--header-h) + 40px);
+    padding-bottom: 40px;
+    scroll-margin-top: 0;
+  }
+
+  .section--green > .container {
+    flex: 1;
+    grid-template-rows: auto auto 1fr auto;
+  }
+
+  .section--green .section__head {
+    grid-row: 1;
+  }
+
+  .section--green .ptabs {
+    grid-row: 2;
+  }
+
+  .section--green .product {
+    grid-row: 3;
+  }
+
+  .section--green .compare-all,
+  .section--green .compare__more {
+    grid-row: 4;
+  }
+
+  .section--green .compare-all[open] + .compare__more {
+    grid-row: 5;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* +2 px — рамка плашки шапки: от низа шапки до заголовка ровно 40 px */
+  .section--green {
+    padding-top: calc(var(--header-h) + 42px);
+  }
+}
+
+/* ==========================================================================
+   «Как это работает», карточка шага: без галочки в плашке времени.
+   Номер — 20 px сверху и слева, время — 20 px сверху и справа, текст — 20 px снизу и слева,
+   заголовок — ровно по центру карточки (одна линия во всех карточках)
+   ========================================================================== */
+@media (min-width: 1024px) {
+  .steps__item.is-done .steps__time::before {
+    content: none;
+  }
+
+  .steps__item {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: 1fr auto 1fr;
+    gap: 16px 12px;
+    min-height: 300px;
+    padding: 20px;
+  }
+
+  .steps__index {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+  }
+
+  .steps__time {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+  }
+
+  .steps__item h3 {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin-top: 0;
+  }
+
+  .steps__item p {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    align-self: end;
+    margin-top: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Видимый край текста — ровно 20 px: убираем межстрочный «воздух» у номера и последней строки текста */
+  .steps__index {
+    line-height: 1;
+    margin-top: -1px;
+  }
+
+  .steps__item p:not(:has(.link)) {
+    margin-bottom: -3px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .steps__index {
+    margin-top: 2px;
+  }
+}
+
+/* ==========================================================================
+   «Типы прокси» — компактный блок (вместо 100svh): секция по высоте содержимого и помещается в экран.
+   В карточке обе колонки по центру по вертикали, «Лучше всего для» — чипы в строку,
+   плитки с цифрами компактные: подпись и значение рядом, 20 px от краёв
+   ========================================================================== */
+@media (min-width: 1024px) {
+  .section--green {
+    display: block;
+    min-height: 0;
+    padding-block: 80px;
+  }
+
+  .section--green > .container {
+    flex: none;
+    grid-template-rows: none;
+  }
+
+  .section--green .section__head {
+    margin-bottom: 32px;
+  }
+
+  .section--green .section__lead {
+    margin-top: 8px;
+  }
+
+  .section--green .ptabs {
+    margin-bottom: 16px;
+  }
+
+  .section--green .ptab {
+    padding: 14px 20px;
+    font-size: 16px;
+  }
+
+  .section--green .product {
+    align-items: center;
+    gap: 56px;
+    padding: 40px;
+  }
+
+  .section--green .product__main {
+    justify-content: center;
+  }
+
+  .section--green .product__title {
+    font-size: 30px;
+  }
+
+  .section--green .product__title:not(:first-child) {
+    margin-top: 12px;
+  }
+
+  .section--green .product__desc {
+    margin-top: 10px;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+
+  .section--green .product__best-title {
+    margin-top: 20px;
+    font-size: 15px;
+  }
+
+  /* «Лучше всего для» — чипы в строку */
+  .section--green .product__best {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 14px;
+  }
+
+  .section--green .product__best li {
+    gap: 6px;
+    padding: 6px 14px 6px 8px;
+    border-radius: 999px;
+    background: var(--c-bg-soft);
+  }
+
+  .section--green .product__best svg {
+    width: 18px;
+    height: 18px;
+    padding: 2px;
+    background: none;
+  }
+
+  .section--green .product__actions {
+    margin-top: 0;
+    padding-top: 28px;
+  }
+
+  /* Плитки с цифрами: по центру рядом с текстом, компактные */
+  .section--green .product__stats {
+    align-self: center;
+    grid-auto-rows: auto;
+  }
+
+  .section--green .stat {
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 20px;
+  }
+
+  .section--green .stat__value {
+    font-size: 19px;
+  }
+
+  .section--green .compare-all,
+  .section--green .compare__more {
+    margin-top: 24px;
+  }
+}
+
+/* «Типы прокси»: ещё плотнее, чтобы блок целиком помещался в экран ноутбука 1440×900 */
+@media (min-width: 1024px) {
+  .section--green {
+    padding-block: 64px;
+  }
+
+  .section--green .section__head {
+    margin-bottom: 24px;
+  }
+
+  .section--green .product__desc {
+    font-size: 15px;
+  }
+
+  .section--green .product__best-title {
+    margin-top: 16px;
+  }
+
+  .section--green .product__best {
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 13px;
+  }
+
+  .section--green .product__best li {
+    padding: 5px 12px 5px 8px;
+    line-height: 1.35;
+  }
+
+  .section--green .product__actions {
+    padding-top: 24px;
+  }
+
+  .section--green .product__actions .btn {
+    min-height: 52px;
+  }
+
+  .section--green .compare-all,
+  .section--green .compare__more {
+    margin-top: 20px;
+  }
+
+  .section--green .compare-all > summary,
+  .section--green .compare__more {
+    min-height: 52px;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Компактные «Типы прокси»: 40 px сверху и снизу — блок целиком в экране 1440×900 */
+  .section--green {
+    padding-block: 40px;
+  }
+}
+
+/* «Как это работает»: «Инструкции по настройке» — в ряду действий под шагами, а не в карточке /04.
+   Все четыре карточки читаются одинаково: номер, время, заголовок, описание */
+@media (min-width: 1024px) {
+  .steps__item p .link {
+    display: none;
+  }
+
+  .steps-cta {
+    align-items: center;
+  }
+
+  .steps-cta__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 56px;
+    margin-left: 12px;
+    color: var(--c-primary-ink);
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  /* Как у «Подробнее о каждом типе»: подчёркивание прорисовывается при наведении */
+  .steps-cta__link .link__text {
+    padding-bottom: 2px;
+    background: linear-gradient(currentColor, currentColor) left bottom / 0 1.5px no-repeat;
+    transition: background-size 0.3s ease;
+  }
+
+  .steps-cta__link:hover .link__text {
+    background-size: 100% 1.5px;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Ссылка из /04 переехала в ряд действий — поправка на межстрочный интервал теперь у всех карточек */
+  .steps__item p {
+    margin-bottom: -3px;
+  }
+}
+
+/* ==========================================================================
+   «Типы прокси»: высота карточки под экран. Самая высокая вкладка (--lock-h из скрипта) — минимум;
+   если экран позволяет, карточка выше — до 540 px, но весь блок остаётся в одном экране
+   (449 px = отступы секции, заголовок, вкладки, ряд «Сравнить» и плавающая шапка)
+   ========================================================================== */
+.product {
+  min-height: var(--lock-h, 0);
+}
+
+@media (min-width: 1024px) {
+  .section--green .product {
+    /* 569 px = шапка 112 + отступы секции 2 × 100 + заголовок, вкладки и ряд «Сравнить» */
+    min-height: max(var(--lock-h, 0px), min(540px, calc(100svh - 569px)));
+  }
+
+  /* «Бесплатный тест» не сливается с белым: светло-зелёная заливка, при наведении — зелёная */
+  .section--green .product__actions .btn--outline {
+    background: var(--c-primary-soft);
+    color: var(--c-primary-ink);
+  }
+}
+
+/* Обычные и высокие экраны ПК: прежний просторный вид — список «Лучше всего для» столбиком,
+   плитки с подписью сверху и значением снизу на всю высоту карточки, текст крупнее */
+@media (min-width: 1024px) and (min-height: 901px) {
+  .section--green .product {
+    align-items: stretch;
+  }
+
+  .section--green .product__title {
+    font-size: 32px;
+  }
+
+  .section--green .product__title:not(:first-child) {
+    margin-top: 14px;
+  }
+
+  .section--green .product__desc {
+    margin-top: 12px;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .section--green .product__best-title {
+    margin-top: 24px;
+    font-size: 16px;
+  }
+
+  .section--green .product__best {
+    display: grid;
+    gap: 10px;
+    margin-top: 12px;
+    font-size: 16px;
+  }
+
+  .section--green .product__best li {
+    gap: 10px;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+  }
+
+  .section--green .product__best svg {
+    width: 22px;
+    height: 22px;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--c-primary-soft);
+  }
+
+  .section--green .product__actions {
+    padding-top: 32px;
+  }
+
+  .section--green .product__actions .btn {
+    min-height: 56px;
+  }
+
+  .section--green .product__stats {
+    align-self: stretch;
+    grid-auto-rows: 1fr;
+  }
+
+  .section--green .stat {
+    justify-content: space-between;
+  }
+
+  .section--green .stat__value {
+    font-size: 21px;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .section--green .product__actions .btn--outline:hover {
+    background: var(--c-primary);
+    color: #fff;
+  }
+}
+
+/* Значок подсказки — иконка «Информация» владельца: кружок уже нарисован, своя обводка кнопке не нужна */
+.tip {
+  border: 0;
+}
+
+.tip__i {
+  display: block;
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+/* ==========================================================================
+   «Типы прокси», левая колонка по правой:
+   бейдж/заголовок и описание — вверху, на уровне верха плитки «Скорость до»;
+   кнопки — внизу, на уровне низа плитки «Смена IP»;
+   «Лучше всего для» — ровно посередине между последней строкой описания и верхом кнопок
+   (свободное место делят поровну auto-отступы у описания и у кнопок)
+   ========================================================================== */
+@media (min-width: 1024px) {
+  .section--green .product {
+    align-items: stretch;
+  }
+
+  .section--green .product__main {
+    justify-content: flex-start;
+  }
+
+  .section--green .product__desc {
+    margin-bottom: auto;
+  }
+
+  .section--green .product__best-title {
+    margin-top: 24px;
+  }
+
+  .section--green .product__actions {
+    margin-top: auto;
+    padding-top: 24px;
+  }
+
+  .section--green .product__stats {
+    align-self: stretch;
+    grid-auto-rows: 1fr;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Межстрочный «воздух» под последней строкой описания (~4 px) — компенсируем, чтобы
+     «Лучше всего для» стояло ровно посередине между описанием и кнопками */
+  .section--green .product__best-title {
+    margin-top: 20px;
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 900px) {
+  .section--green .product__best-title {
+    margin-top: 16px;
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 900px) {
+  .section--green .product__actions {
+    padding-top: 20px;
+  }
+}
+
+/* ==========================================================================
+   «Что говорят клиенты» на ПК — в духе proxy-seller:
+   площадки — плашки с заливкой; отзывы — бегущая лента на всю ширину экрана с мягким затуханием по краям,
+   наведение/фокус — пауза; карточка: аватар с инициалами, имя, площадка и дата, звёзды, текст;
+   «Читать полностью» — окно с отзывом целиком. Внизу две кнопки по центру. Mobile — прежняя карусель
+   ========================================================================== */
+.rmarquee,
+.reviews__bonus {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  #reviews {
+    overflow-x: clip;
+  }
+
+  #reviews .carousel,
+  #review-promo {
+    display: none;
+  }
+
+  /* Площадки: заливка без обводки, наведение — зелёная, текст белый */
+  #reviews .platforms {
+    gap: 16px;
+  }
+
+  #reviews .platform {
+    gap: 16px;
+    padding: 20px;
+    border: 0;
+    border-radius: 20px;
+    background: var(--c-surface);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  #reviews .platform__meta {
+    margin-top: 2px;
+    transition: color 0.2s ease;
+  }
+
+  #reviews .platform__meta b {
+    transition: color 0.2s ease;
+  }
+
+  /* Лента */
+  .rmarquee {
+    display: block;
+    margin-top: 40px;
+    margin-inline: calc(50% - 50vw);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+
+  .rmarquee__track {
+    display: flex;
+    gap: 20px;
+    width: max-content;
+    padding-block: 4px;
+    animation: rmarquee 70s linear infinite;
+  }
+
+  .rmarquee:hover .rmarquee__track,
+  .rmarquee:focus-within .rmarquee__track {
+    animation-play-state: paused;
+  }
+
+  .rcard {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 400px;
+    padding: 40px;
+    border-radius: 24px;
+    background: var(--c-surface);
+  }
+
+  .rcard__head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .rcard__avatar {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    background: var(--c-primary-soft);
+    color: var(--c-primary-ink);
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .rcard__who {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .rcard__name {
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .rcard__meta {
+    margin-top: 2px;
+    color: var(--c-muted);
+    font-size: 14px;
+  }
+
+  .rcard__stars {
+    flex: none;
+    align-self: flex-start;
+    color: var(--c-star);
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+
+  .rcard__text {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .rcard__more {
+    align-self: flex-start;
+    margin-top: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--c-primary-ink);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .rcard__more::after {
+    content: '';
+    display: block;
+    height: 1.5px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+
+  .rcard__more:hover::after,
+  .rcard__more:focus-visible::after {
+    transform: scaleX(1);
+  }
+
+  /* Окно отзыва */
+  .rcard__stars--big {
+    display: block;
+    margin-top: 12px;
+    font-size: 18px;
+  }
+
+  .rcard__full {
+    margin-top: 16px;
+    font-size: 17px;
+    line-height: 1.65;
+  }
+
+  /* Кнопки: по центру, две, скидка — внутри «Оставить отзыв» */
+  #reviews .reviews__actions {
+    justify-content: center;
+    gap: 12px;
+    margin-top: 40px;
+  }
+
+  #reviews .reviews__actions .btn {
+    min-height: 56px;
+    padding-inline: 24px;
+    border-color: transparent;
+    background: var(--c-surface);
+    color: var(--c-text);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .reviews__bonus {
+    display: inline-flex;
+    align-items: center;
+    height: 26px;
+    margin-left: 10px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: var(--c-primary-soft);
+    color: var(--c-primary-ink);
+    font-size: 13px;
+    font-weight: 700;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  #reviews .platform:hover {
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  #reviews .platform:hover .platform__meta,
+  #reviews .platform:hover .platform__meta b {
+    color: #fff;
+  }
+
+  #reviews .reviews__actions .btn:hover {
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  #reviews .reviews__actions .btn:hover .reviews__bonus {
+    background: rgb(255 255 255 / 0.18);
+    color: #fff;
+  }
+}
+
+@keyframes rmarquee {
+  to {
+    transform: translateX(calc(-50% - 10px));
+  }
+}
+
+/* «Уменьшить движение»: лента не едет, листается вручную */
+@media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
+  .rmarquee {
+    overflow-x: auto;
+  }
+
+  .rmarquee__track {
+    animation: none;
+    padding-inline: 8vw;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Звёзды — отдельной строкой под именем: площадка и дата не переносятся */
+  .rcard__stars {
+    align-self: flex-start;
+    margin-top: -4px;
+    font-size: 16px;
+    letter-spacing: 2px;
+  }
+
+  .rcard__meta {
+    white-space: nowrap;
+  }
+}
+
+/* ==========================================================================
+   «Акции и купоны» на ПК — вторая зелёная перебивка (первая — «Типы прокси»).
+   Наши купоны — белые билеты: условие сверху, «перфорация» с вырезами по краям, снизу код,
+   копируется нажатием на всю плашку, срок плашкой, «Применить» — светло-зелёная заливка.
+   Партнёр Proksik.su — отдельной спокойной полосой под купонами, чтобы не путали с нашими скидками
+   ========================================================================== */
+@media (min-width: 1024px) {
+  .section--accent {
+    background:
+      radial-gradient(900px 480px at 0% 100%, rgb(255 255 255 / 0.08), transparent 70%),
+      var(--c-primary);
+    color: #fff;
+  }
+
+  .section--accent .section__lead {
+    color: rgb(255 255 255 / 0.85);
+  }
+
+  .section--accent .section__head {
+    margin-bottom: 40px;
+  }
+
+  .section--accent :focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
+  }
+
+  .section--accent .promo :focus-visible {
+    outline-color: var(--c-ink);
+  }
+
+  .section--accent .promos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+  }
+
+  /* Купон-билет */
+  .section--accent .promo {
+    position: relative;
+    gap: 0;
+    padding: 40px;
+    border: 0;
+    border-radius: 24px;
+    background: var(--c-surface);
+    color: var(--c-text);
+  }
+
+  .section--accent .promo__title {
+    font-size: 24px;
+    line-height: 1.2;
+  }
+
+  .section--accent .promo__cond {
+    flex: 1;
+    margin-top: 12px;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+
+  /* «Перфорация»: пунктир и два полукруглых выреза цвета фона секции */
+  .section--accent .promo:not(.promo--partner) .promo__code {
+    margin-top: 56px;
+  }
+
+  .section--accent .promo:not(.promo--partner)::before {
+    content: '';
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    top: var(--perf, 50%);
+    border-top: 2px dashed var(--c-border);
+  }
+
+  .section--accent .promo:not(.promo--partner)::after {
+    content: '';
+    position: absolute;
+    left: -14px;
+    right: -14px;
+    top: calc(var(--perf, 50%) - 13px);
+    height: 28px;
+    background:
+      radial-gradient(circle at 14px 50%, var(--c-primary) 13px, transparent 14px) left / 28px 28px no-repeat,
+      radial-gradient(circle at 14px 50%, var(--c-primary) 13px, transparent 14px) right / 28px 28px no-repeat;
+    pointer-events: none;
+  }
+
+  /* Код: вся плашка — кнопка «Скопировать» */
+  .section--accent .promo__code {
+    position: relative;
+    align-items: center;
+    height: 60px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--c-bg-soft);
+    transition: background-color 0.2s ease;
+  }
+
+  .section--accent .promo__code code {
+    padding: 0 20px;
+    font-size: 18px;
+    letter-spacing: 0.08em;
+  }
+
+  .section--accent .promo__copy {
+    min-width: 0;
+    min-height: 0;
+    padding: 0 20px;
+    border: 0;
+    background: none;
+    color: var(--c-muted);
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .section--accent .promo__copy::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  .section--accent .promo__copy.is-copied {
+    background: none;
+    color: var(--c-primary-ink);
+  }
+
+  .section--accent .promo__code:has(.is-copied) {
+    background: var(--c-primary-soft);
+  }
+
+  /* Срок — плашкой; ≤ 14 дней — заметнее */
+  .section--accent .promo__valid {
+    align-self: flex-start;
+    margin-top: 16px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--c-bg-soft);
+    font-size: 13px;
+  }
+
+  .section--accent .promo__valid--soon {
+    background: var(--c-warn-soft);
+    color: var(--c-warn);
+    font-weight: 600;
+  }
+
+  .section--accent .promo .btn {
+    min-height: 56px;
+    margin-top: 20px;
+    border-color: transparent;
+    background: var(--c-primary-soft);
+    color: var(--c-primary-ink);
+    font-size: 16px;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  /* Партнёр — спокойная полоса во всю ширину под купонами */
+  .section--accent .promo--partner {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    column-gap: 20px;
+    align-items: center;
+    padding: 24px 40px;
+    background: rgb(255 255 255 / 0.1);
+    color: #fff;
+  }
+
+  .section--accent .promo--partner .badge {
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+
+  .section--accent .promo--partner .promo__title {
+    grid-column: 2;
+    font-size: 18px;
+  }
+
+  .section--accent .promo--partner .promo__cond {
+    grid-column: 2;
+    margin-top: 4px;
+    color: rgb(255 255 255 / 0.8);
+    font-size: 15px;
+  }
+
+  .section--accent .promo--partner .btn {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    margin-top: 0;
+    padding-inline: 24px;
+    background: rgb(255 255 255 / 0.14);
+    color: #fff;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .section--accent .promo__code:hover {
+    background: var(--c-primary-soft);
+  }
+
+  .section--accent .promo__code:hover .promo__copy {
+    color: var(--c-primary-ink);
+  }
+
+  .section--accent .promo .btn:hover {
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  .section--accent .promo--partner .btn:hover {
+    background: #fff;
+    color: var(--c-primary-ink);
+  }
+}
+
+/* «Перфорация» купона — отдельный элемент между условием и кодом: пунктир и два выреза цвета фона */
+.promo__perf {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .section--accent .promo:not(.promo--partner)::before,
+  .section--accent .promo:not(.promo--partner)::after {
+    content: none;
+  }
+
+  .section--accent .promo:not(.promo--partner) .promo__code {
+    margin-top: 0;
+  }
+
+  .section--accent .promo__perf {
+    position: relative;
+    display: block;
+    height: 28px;
+    margin: 20px -40px;
+  }
+
+  .section--accent .promo__perf::before {
+    content: '';
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    top: 50%;
+    border-top: 2px dashed var(--c-border);
+  }
+
+  .section--accent .promo__perf::after {
+    content: '';
+    position: absolute;
+    inset: 0 -14px;
+    background:
+      radial-gradient(circle at 14px 50%, var(--c-primary) 13.5px, transparent 14px) left / 28px 28px no-repeat,
+      radial-gradient(circle at 14px 50%, var(--c-primary) 13.5px, transparent 14px) right / 28px 28px no-repeat;
+  }
+}
+
+@media (min-width: 1024px) {
+  .section--accent .promo__valid {
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* «Партнёр» на зелёной полосе — в тон: полупрозрачная белая заливка, белый текст капсом */
+  .section--accent .promo--partner .badge {
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.16);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* «Скопировать» не нужна: «Применить» сам копирует код. Код остаётся на виду и выделяется вручную */
+  .section--accent .promo__copy {
+    display: none;
+  }
+
+  .section--accent .promo__code {
+    justify-content: center;
+    cursor: text;
+    user-select: all;
+  }
+
+  .section--accent .promo__code code {
+    flex: none;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .section--accent .promo__code:hover {
+    background: var(--c-bg-soft);
+  }
+}
+
+/* Купоны: заголовки ровно в две строки, условия начинаются на одной линии во всех карточках;
+   срок — плашка во всю ширину, как код и кнопка: дата слева, «осталось N дней» справа */
+.promo__valid-sep {
+  display: inline;
+}
+
+@media (min-width: 1024px) {
+  .section--accent .promo__title {
+    min-height: calc(2 * 1.2em);
+  }
+
+  .section--accent .promo__valid {
+    display: flex;
+    align-self: stretch;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    height: 44px;
+    padding: 0 20px;
+    border-radius: 14px;
+    color: var(--c-muted);
+    font-size: 14px;
+  }
+
+  .section--accent .promo__valid b {
+    color: var(--c-primary-ink);
+    font-weight: 600;
+  }
+
+  .section--accent .promo__valid--soon b {
+    color: var(--c-warn);
+  }
+
+  .section--accent .promo__valid-sep {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Условия купонов — ровные строки */
+  .section--accent .promo__cond {
+    text-wrap: balance;
+  }
+
+  /* Полоса партнёра: правило «заголовок в две строки» к ней не относится */
+  .section--accent .promo--partner .promo__title {
+    min-height: 0;
+  }
+}
+
+/* Короткие абзацы (описания, ответы, условия) — ровные строки без короткого «хвоста» в конце.
+   Браузер балансирует до 6 строк, длиннее — обычный перенос */
+@media (min-width: 1024px) {
+  main p {
+    text-wrap: balance;
+  }
+}
+
+/* ==========================================================================
+   «Частые вопросы» на ПК: заголовок по центру; ниже две колонки —
+   слева закреплённая карточка «Не нашли ответ?» (Telegram + «Все ответы»), справа вопросы.
+   Вопрос — белая плашка без обводки: номер «/01», текст, круглый «+» → «×»; ответ раскрывается плавно.
+   Открыт один вопрос за раз. Наведение на закрытый — зелёная заливка, текст белый. Mobile — прежний список
+   ========================================================================== */
+.faq-side {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    interpolate-size: allow-keywords;
+  }
+
+  #faq .container--narrow {
+    max-width: calc(var(--container) + var(--gutter) * 2);
+  }
+
+  #faq .section__cta {
+    display: none;
+  }
+
+  .faq-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* Карточка «Не нашли ответ?» */
+  .faq-side {
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 40px;
+    border-radius: 24px;
+    background:
+      radial-gradient(420px 260px at 100% 0%, rgb(255 255 255 / 0.12), transparent 70%),
+      var(--c-primary);
+    color: #fff;
+  }
+
+  .faq-side__title {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .faq-side__text {
+    margin-top: 12px;
+    color: rgb(255 255 255 / 0.88);
+    font-size: 16px;
+    line-height: 1.55;
+  }
+
+  .faq-side__btn {
+    margin-top: 28px;
+    background: #fff;
+    border-color: transparent;
+    color: var(--c-primary-ink);
+  }
+
+  .faq-side__btn:focus-visible,
+  .faq-side__link:focus-visible {
+    outline-color: #fff;
+  }
+
+  .faq-side__link {
+    margin-top: 16px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .faq-side__link .link__text {
+    padding-bottom: 2px;
+    background: linear-gradient(currentColor, currentColor) left bottom / 0 1.5px no-repeat;
+    transition: background-size 0.3s ease;
+  }
+
+  /* Вопросы */
+  .faq {
+    display: grid;
+    gap: 12px;
+    border-top: 0;
+    counter-reset: faq;
+  }
+
+  .faq__item {
+    counter-increment: faq;
+    border: 0;
+    border-radius: 20px;
+    background: var(--c-surface);
+    transition: background-color 0.2s ease;
+  }
+
+  .faq__item summary {
+    gap: 20px;
+    padding: 20px 20px 20px 24px;
+    font-size: 18px;
+    transition: color 0.2s ease;
+  }
+
+  .faq__item summary::before {
+    content: '/' counter(faq, decimal-leading-zero);
+    flex: none;
+    min-width: 32px;
+    color: var(--c-primary);
+    font-size: 14px;
+    font-weight: 600;
+    transition: color 0.2s ease;
+  }
+
+  .faq__item summary > * ,
+  .faq__item summary {
+    text-wrap: balance;
+  }
+
+  /* Круглый «+», у открытого — «×» */
+  .faq__item summary::after {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    margin: 0 0 0 auto;
+    border: 0;
+    border-radius: 999px;
+    background:
+      linear-gradient(currentColor, currentColor) center / 14px 2px no-repeat,
+      linear-gradient(currentColor, currentColor) center / 2px 14px no-repeat,
+      var(--c-bg-soft);
+    color: var(--c-primary-ink);
+    transform: none;
+    transition:
+      transform 0.3s ease,
+      background-color 0.2s ease;
+  }
+
+  .faq__item[open] summary::after {
+    transform: rotate(45deg);
+  }
+
+  .faq__item summary:hover {
+    color: inherit;
+  }
+
+  .faq__body {
+    max-width: none;
+    padding: 0 84px 28px 76px;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  /* Плавное раскрытие ответа */
+  .faq__item::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size 0.3s ease,
+      content-visibility 0.3s allow-discrete;
+  }
+
+  .faq__item[open]::details-content {
+    block-size: auto;
+  }
+
+  .faq__body .btn {
+    margin-top: 4px;
+    border-color: transparent;
+    background: var(--c-primary-soft);
+    color: var(--c-primary-ink);
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .faq__item:not([open]):hover {
+    background: var(--c-primary);
+  }
+
+  .faq__item:not([open]):hover summary,
+  .faq__item:not([open]):hover summary::before {
+    color: #fff;
+  }
+
+  .faq__item:not([open]):hover summary::after {
+    background:
+      linear-gradient(#fff, #fff) center / 14px 2px no-repeat,
+      linear-gradient(#fff, #fff) center / 2px 14px no-repeat,
+      rgb(255 255 255 / 0.16);
+  }
+
+  .faq-side__btn:hover {
+    background: var(--c-ink);
+    color: #fff;
+  }
+
+  .faq-side__link:hover .link__text {
+    background-size: 100% 1.5px;
+  }
+
+  .faq__body .btn:hover {
+    background: var(--c-primary);
+    color: #fff;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq__item::details-content {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   Текстовые ссылки-действия («Подробнее о каждом типе», «Все ответы»): тонкая стрелка «›» справа,
+   при наведении сдвигается вправо, текст подчёркивается. Кнопки — больше воздуха по бокам (как в примере)
+   ========================================================================== */
+@media (min-width: 1024px) {
+  .section--green .compare__more .link__arrow {
+    display: none;
+  }
+
+  .section--green .compare__more .link,
+  .faq-side__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section--green .compare__more .link::after,
+  .faq-side__link::after {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.3s ease;
+  }
+
+  .section--green .compare__more .link:hover::after,
+  .faq-side__link:hover::after {
+    transform: translateX(3px) rotate(-45deg);
+  }
+
+  /* Воздух в кнопках: крупные кнопки — 32 px по бокам */
+  .btn--lg,
+  .steps-cta .btn,
+  #reviews .reviews__actions .btn {
+    padding-inline: 32px;
+  }
+
+  .section--green .compare-all > summary {
+    padding-inline: 32px;
+  }
+}
+
+/* ==========================================================================
+   FAQ: зелёная карточка той же высоты, что список вопросов (растёт вместе с ним при раскрытии).
+   Сверху — «Не нашли ответ?», в середине — «5 мин» крупно (как «30 sec median reply» у proxy-seller),
+   внизу — две кнопки во всю ширину: «Написать в Telegram» и «Все вопросы и ответы ›»
+   ========================================================================== */
+@media (min-width: 1024px) {
+  .faq-layout {
+    align-items: stretch;
+  }
+
+  .faq-side {
+    position: static;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 32px;
+  }
+
+  .faq-side__stat {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .faq-side__stat b {
+    font-size: 64px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .faq-side__stat span {
+    color: rgb(255 255 255 / 0.85);
+    font-size: 15px;
+  }
+
+  .faq-side__actions {
+    display: grid;
+    gap: 12px;
+  }
+
+  .faq-side__btn,
+  .faq-side__more {
+    width: 100%;
+    margin-top: 0;
+    border-color: transparent;
+  }
+
+  .faq-side__btn {
+    background: #fff;
+    color: var(--c-primary-ink);
+  }
+
+  .faq-side__more {
+    gap: 12px;
+    background: rgb(255 255 255 / 0.14);
+    color: #fff;
+    transition: background-color 0.2s ease;
+  }
+
+  .faq-side__more::after {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.3s ease;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .faq-side__more:hover {
+    background: rgb(255 255 255 / 0.24);
+  }
+
+  .faq-side__more:hover::after {
+    transform: translateX(3px) rotate(-45deg);
+  }
+}
+
+/* ==========================================================================
+   FAQ на ПК: вопросы в две независимые колонки по 4 на всю ширину;
+   под ними — зелёная полоса «Не нашли ответ?»: текст слева, две кнопки в ряд справа
+   ========================================================================== */
+@media (min-width: 1024px) {
+  .faq-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .faq {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 12px;
+  }
+
+  .faq__col {
+    display: grid;
+    gap: 12px;
+  }
+
+  .faq__body {
+    padding-right: 32px;
+  }
+
+  .faq-side {
+    position: static;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 40px;
+    padding: 40px;
+  }
+
+  .faq-side__text {
+    max-width: 56ch;
+  }
+
+  .faq-side__actions {
+    display: flex;
+    gap: 12px;
+  }
+
+  .faq-side__btn,
+  .faq-side__more {
+    width: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Все плашки вопросов одной высоты (под две строки) — ряды в колонках стоят ровно друг напротив друга */
+  .faq__item summary {
+    min-height: 88px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .faq__item summary {
+    min-height: 94px;
+  }
+}
+
+/* ==========================================================================
+   Партнёрская программа на ПК — баннер: зелёная карточка на белом фоне секции
+   (не третья зелёная секция). Слева: метка, заголовок, пояснение, три шага, кнопки;
+   справа: «до 15%» крупно в стеклянном круге с кольцами и монетками «₽». Mobile — прежняя строка
+   ========================================================================== */
+.pbanner {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .partner-strip {
+    padding-block: var(--section-y);
+    background: none;
+  }
+
+  .partner-strip__inner {
+    display: none;
+  }
+
+  .pbanner {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    align-items: center;
+    gap: 40px;
+    position: relative;
+    overflow: hidden;
+    padding: 56px;
+    border-radius: 32px;
+    background:
+      radial-gradient(700px 420px at 85% 50%, rgb(255 255 255 / 0.14), transparent 70%),
+      radial-gradient(500px 300px at 0% 100%, rgb(0 0 0 / 0.12), transparent 70%),
+      var(--c-primary);
+    color: #fff;
+  }
+
+  .pbanner__eyebrow {
+    display: inline-flex;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.16);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .pbanner__title {
+    margin-top: 20px;
+    max-width: 16ch;
+    font-size: 44px;
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+  }
+
+  .pbanner__text {
+    margin-top: 16px;
+    max-width: 48ch;
+    color: rgb(255 255 255 / 0.88);
+    font-size: 17px;
+    line-height: 1.6;
+  }
+
+  /* Три шага — плашки в ряд */
+  .pbanner__steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 32px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pbanner__steps li {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px;
+    border-radius: 18px;
+    background: rgb(255 255 255 / 0.12);
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .pbanner__step-num {
+    color: var(--c-accent-light);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .pbanner__actions {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-top: 32px;
+  }
+
+  .pbanner__btn {
+    border-color: transparent;
+    background: #fff;
+    color: var(--c-primary-ink);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .pbanner__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .pbanner__link::after {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.3s ease;
+  }
+
+  .pbanner__link .link__text {
+    padding-bottom: 2px;
+    background: linear-gradient(currentColor, currentColor) left bottom / 0 1.5px no-repeat;
+    transition: background-size 0.3s ease;
+  }
+
+  .pbanner :focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
+  }
+
+  /* Визуал: «до 15%» в стеклянном круге */
+  .pbanner__visual {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    max-width: 400px;
+    width: 100%;
+    justify-self: center;
+  }
+
+  .pbanner__ring {
+    position: absolute;
+    border-radius: 999px;
+  }
+
+  .pbanner__ring--outer {
+    inset: 0;
+    border: 1.5px dashed rgb(255 255 255 / 0.28);
+  }
+
+  .pbanner__ring--inner {
+    inset: 14%;
+    border: 1px solid rgb(255 255 255 / 0.22);
+    background: rgb(255 255 255 / 0.1);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.25),
+      0 30px 60px rgb(0 0 0 / 0.18);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+
+  .pbanner__big {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    font-size: 112px;
+    font-weight: 800;
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+  }
+
+  .pbanner__big small {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: rgb(255 255 255 / 0.85);
+  }
+
+  .pbanner__big i {
+    position: absolute;
+    right: -0.42em;
+    bottom: 0.12em;
+    font-size: 0.42em;
+    font-style: normal;
+    color: var(--c-accent-light);
+  }
+
+  .pbanner__coin {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 999px;
+    background: radial-gradient(circle at 30% 30%, #8fe36a, #3f9a1d 70%);
+    box-shadow:
+      inset 0 2px 0 rgb(255 255 255 / 0.4),
+      0 14px 28px rgb(0 0 0 / 0.22);
+    color: #fff;
+    font-size: 28px;
+    font-weight: 800;
+    animation: pbanner-float 6s ease-in-out infinite;
+  }
+
+  .pbanner__coin--a {
+    top: 4%;
+    right: 6%;
+  }
+
+  .pbanner__coin--b {
+    bottom: 10%;
+    left: 0;
+    width: 52px;
+    height: 52px;
+    font-size: 22px;
+    animation-delay: -2s;
+  }
+
+  .pbanner__coin--c {
+    bottom: 2%;
+    right: 18%;
+    width: 40px;
+    height: 40px;
+    font-size: 17px;
+    animation-delay: -4s;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .pbanner__btn:hover {
+    background: var(--c-ink);
+    color: #fff;
+  }
+
+  .pbanner__link:hover .link__text {
+    background-size: 100% 1.5px;
+  }
+
+  .pbanner__link:hover::after {
+    transform: translateX(3px) rotate(-45deg);
+  }
+}
+
+@keyframes pbanner-float {
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pbanner__coin {
+    animation: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Ширина баннера — как у содержимого остальных блоков (без боковых полей контейнера) */
+  .pbanner {
+    max-width: var(--container);
+    width: calc(100% - 2 * var(--gutter));
+  }
+}
+
+/* Фраза, которую нельзя разрывать переносом («до 15%») */
+.nowrap {
+  white-space: nowrap;
+}
+
+@media (min-width: 1024px) {
+  .pbanner__title {
+    max-width: 21ch;
+  }
+}
+
+/* Партнёрский баннер — без декоративного круга: всё по центру, как центральная композиция сайта */
+@media (min-width: 1024px) {
+  .pbanner {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    padding: 64px 56px;
+    text-align: center;
+  }
+
+  .pbanner__visual {
+    display: none;
+  }
+
+  .pbanner__main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .pbanner__title {
+    max-width: none;
+  }
+
+  .pbanner__text {
+    margin-inline: auto;
+  }
+
+  .pbanner__steps {
+    width: 100%;
+    max-width: 880px;
+  }
+
+  .pbanner__steps li {
+    align-items: center;
+    text-align: center;
+  }
+
+  .pbanner__actions {
+    justify-content: center;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Шаги — каждый ровно в две сбалансированные строки; пояснение — в две строки */
+  .pbanner__steps li > span:last-child {
+    max-width: 17ch;
+    text-wrap: balance;
+  }
+
+  .pbanner__text {
+    max-width: 62ch;
+  }
+}
+
+/* ==========================================================================
+   Отступы на ПК (правило владельца):
+   между обычными блоками — 200 px (по 100 px сверху и снизу у секции);
+   зелёные блоки («Типы прокси», «Акции», «Партнёрская программа») — 100 px сверху и снизу внутри.
+   Партнёрская программа — зелёная секция во всю ширину, как «Акции»; содержимое по центру
+   ========================================================================== */
+@media (min-width: 1024px) {
+  :root {
+    --section-y: 100px;
+  }
+
+  .section--green,
+  .section--accent,
+  .partner-strip.section--accent {
+    padding-block: 100px;
+  }
+
+  /* Цветной фон сам читается как блок: от него до соседнего содержимого или фона — те же 200 px.
+     Поэтому снаружи у цветных блоков ещё по 100 px белого. Колонка флексом — чтобы отступы двух
+     цветных блоков подряд не схлопывались в 100 */
+  main {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section--soft,
+  .section--green,
+  .section--accent,
+  .section--dark {
+    margin-block: var(--section-y);
+  }
+
+  /* «Нам доверяют» идёт сразу за тёмным первым экраном — 200 px от его края, как от любого цветного блока.
+     У ленты логотипов свои 18 px воздуха снизу — вычитаем, чтобы до логотипов было ровно 100 px */
+  .trust {
+    padding-top: calc(var(--section-y) * 2);
+    padding-bottom: calc(var(--section-y) - 18px);
+  }
+
+  /* Подвал — тёмный блок: 100 px сверху и снизу внутри и 200 px от содержимого над ним */
+  .footer {
+    margin-top: var(--section-y);
+    padding-block: 100px calc(100px + env(safe-area-inset-bottom));
+  }
+
+  /* Баннер становится содержимым зелёной секции: без своей карточки */
+  .partner-strip.section--accent .pbanner {
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    overflow: visible;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Старое правило «полоса без фона» не должно перебивать зелёный фон секции */
+  .partner-strip.section--accent {
+    background:
+      radial-gradient(900px 480px at 100% 0%, rgb(255 255 255 / 0.1), transparent 70%),
+      var(--c-primary);
+  }
+}
+
+/* Текстовые ссылки-действия на ПК — подчёркивание как на сайте Syntrex: при наведении линия выезжает слева,
+   когда курсор уходит — уезжает вправо (а не втягивается обратно) */
+@media (min-width: 1024px) {
+  .section--green .compare__more .link__text,
+  .pbanner__link .link__text,
+  .farm-desk__link .link__text {
+    background-position: right bottom;
+    transition: background-size 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+
+  .section--green .compare__more .link:hover .link__text,
+  .pbanner__link:hover .link__text,
+  .farm-desk__link:hover .link__text {
+    background-position: left bottom;
+  }
+}
+
+@media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
+  .section--green .compare__more .link__text,
+  .pbanner__link .link__text,
+  .farm-desk__link .link__text {
+    transition: none;
+  }
+}
+
+/* Партнёрская программа на ПК: шаги — цепочка без номеров. Плашки соединены стрелками владельца,
+   каждая следующая ярче; результат «до 15% с каждой оплаты» — белой плашкой. Под цепочкой — пример дохода */
+@media (min-width: 1024px) {
+  .pbanner__steps {
+    gap: 48px;
+    margin-top: 40px;
+  }
+
+  .pbanner__steps li {
+    position: relative;
+    justify-content: center;
+    gap: 4px;
+    padding: 20px;
+    background: rgb(255 255 255 / 0.1);
+  }
+
+  .pbanner__steps li:nth-child(2) {
+    background: rgb(255 255 255 / 0.18);
+  }
+
+  .pbanner__steps b {
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .pbanner__steps li > span:last-child {
+    color: rgb(255 255 255 / 0.8);
+  }
+
+  .pbanner__steps li.is-result {
+    background: #fff;
+    color: var(--c-primary-ink);
+    box-shadow: 0 16px 40px rgb(0 0 0 / 0.14);
+  }
+
+  /* Подпись — тем же зелёным, что заголовок (не вторым оттенком); второстепенная за счёт размера и веса */
+  .pbanner__steps li.is-result > span:last-child {
+    color: var(--c-primary-ink);
+  }
+
+  /* Стрелка между плашками — посередине промежутка */
+  .pbanner__steps li:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -36px;
+    width: 24px;
+    height: 24px;
+    background: rgb(255 255 255 / 0.75);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M15.75,9.525,11.164,4.939A1.5,1.5,0,0,0,9.043,7.061l4.586,4.585a.5.5,0,0,1,0,.708L9.043,16.939a1.5,1.5,0,0,0,2.121,2.122l4.586-4.586A3.505,3.505,0,0,0,15.75,9.525Z'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M15.75,9.525,11.164,4.939A1.5,1.5,0,0,0,9.043,7.061l4.586,4.585a.5.5,0,0,1,0,.708L9.043,16.939a1.5,1.5,0,0,0,2.121,2.122l4.586-4.586A3.505,3.505,0,0,0,15.75,9.525Z'/%3E%3C/svg%3E") center / contain no-repeat;
+    transform: translateY(-50%);
+  }
+
+  /* Мини-расчёт дохода: вопрос, варианты числа клиентов, крупная сумма, пояснение */
+  .pcalc {
+    display: grid;
+    justify-items: center;
+    gap: 16px;
+    margin-top: 40px;
+  }
+
+  .pcalc__q {
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .pcalc__chips {
+    display: flex;
+    gap: 8px;
+    padding: 6px;
+    border-radius: 16px;
+    background: rgb(0 0 0 / 0.12);
+  }
+
+  /* Вариант: заливка, наведение — белая, выбранный — белый с галочкой */
+  .pcalc__chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    /* Одна ширина у всех: галочка у выбранного не раздвигает ряд */
+    width: 92px;
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: 12px;
+    background: rgb(255 255 255 / 0.1);
+    font-size: 17px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .pcalc__chip input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .pcalc__check {
+    display: none;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  .pcalc__check svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .pcalc__chip:has(input:checked) {
+    background: #fff;
+    color: var(--c-primary-ink);
+  }
+
+  .pcalc__chip:has(input:checked) .pcalc__check {
+    display: grid;
+  }
+
+  .pcalc__chip:has(input:focus-visible) {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
+  }
+
+  .pcalc__result {
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .pcalc__sum {
+    font-size: 56px;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pcalc__note {
+    max-width: 60ch;
+    color: rgb(255 255 255 / 0.8);
+    font-size: 15px;
+    text-wrap: balance;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .pcalc__chip:hover {
+    background: #fff;
+    color: var(--c-primary-ink);
+  }
+}
+
+/* Наличие в форме первого экрана (ПК): справа в строке «Общая стоимость» — точка и «В наличии 52 шт.»;
+   мало (≤ 20) — «Осталось 14 шт.» с янтарной точкой. У лицензии ProxyFarm — пусто и скрыто */
+.qb-stock {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .quickbuy__total {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-content: center;
+  }
+
+  .quickbuy__total > * {
+    grid-column: 1 / -1;
+  }
+
+  .quickbuy__total > #qb-total-label {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .qb-stock {
+    display: inline-flex;
+    grid-column: 2;
+    grid-row: 1;
+    align-items: center;
+    align-self: center;
+    gap: 8px;
+    color: var(--c-hero-muted);
+    font-size: 14px;
+    line-height: 21px;
+    white-space: nowrap;
+  }
+
+  .qb-stock:empty {
+    display: none;
+  }
+
+  .qb-stock::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--c-accent-light);
+    box-shadow: 0 0 0 3px rgb(182 238 160 / 0.18);
+  }
+
+  .qb-stock b {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .qb-stock.is-low::before {
+    background: #f5c26b;
+    box-shadow: 0 0 0 3px rgb(245 194 107 / 0.2);
+  }
+}
+
+/* Лента «Нам доверяют» на ПК: значки площадок в монохроме, в тон тексту — цвет не спорит с главным.
+   Свой цвет значок получает только при наведении на пункт */
+@media (min-width: 1024px) {
+  .marquee__logo {
+    transition: background-color 0.2s ease;
+  }
+
+  .marquee__item:not(:hover) .marquee__logo {
+    background-color: var(--c-muted) !important;
+  }
+}
+
+@media (min-width: 1024px) and (hover: none) {
+  .marquee__item .marquee__logo {
+    background-color: var(--c-muted) !important;
+  }
+}
+
+/* Ссылки под формой первого экрана: в разметке «Тест · Подбор · Telegram» — на ПК самый длинный пункт
+   по центру. Ниже 1024 px — прежний порядок, «Подбор по задаче» первым */
+@media (max-width: 1023px) {
+  .hero__links > [href="#picker"] {
+    order: -1;
+  }
+}
+
+/* ==========================================================================
+   ProxyFarm на ПК — тёмная секция во всю ширину (в духе Proxy-Seller): заголовок по центру,
+   под ним две колонки одной высоты — слева три плюса /01–/03, справа белый калькулятор лицензии
+   (модемы ползунком или счётчиком, срок, итог, кнопки). «Подробнее» — в ряду действий под блоком.
+   Mobile — прежняя карточка
+   ========================================================================== */
+.farm-desk {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .section--dark {
+    background:
+      radial-gradient(900px 520px at 100% 0%, rgb(47 124 17 / 0.32), transparent 70%),
+      radial-gradient(700px 420px at 0% 100%, rgb(47 124 17 / 0.16), transparent 70%),
+      var(--c-dark);
+    color: var(--c-on-dark);
+  }
+
+  .farm-mob {
+    display: none;
+  }
+
+  .farm-desk {
+    display: block;
+  }
+
+  .farm-desk .section__head {
+    margin-bottom: 40px;
+  }
+
+  .farm-desk__eyebrow {
+    display: inline-flex;
+    margin-bottom: 16px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.1);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .farm-desk .section__lead {
+    color: var(--c-on-dark-muted);
+  }
+
+  .farm-desk__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 20px;
+    max-width: 1200px;
+    margin-inline: auto;
+  }
+
+  /* Три плюса — плитки на всю высоту калькулятора, текст по центру плитки */
+  .farm-desk__points {
+    display: grid;
+    grid-auto-rows: 1fr;
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .farm-desk__points li {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 40px;
+    border-radius: 24px;
+    background: rgb(255 255 255 / 0.06);
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.45;
+    text-wrap: pretty;
+  }
+
+  .farm-desk__num {
+    color: var(--c-accent-light);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  /* Калькулятор */
+  .fcalc {
+    display: grid;
+    gap: 20px;
+    padding: 40px;
+    border-radius: 24px;
+    background: var(--c-surface);
+    color: var(--c-text);
+  }
+
+  .fcalc__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .fcalc__label {
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .fcalc__stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 14px;
+    background: var(--c-bg-soft);
+  }
+
+  .fcalc__stepper button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--c-text);
+    font-size: 22px;
+    line-height: 1;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .fcalc__stepper button:disabled {
+    color: var(--c-border-strong);
+    cursor: default;
+  }
+
+  .fcalc__stepper input {
+    width: 64px;
+    height: 44px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--c-surface);
+    color: var(--c-text);
+    font: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  .fcalc__stepper input::-webkit-outer-spin-button,
+  .fcalc__stepper input::-webkit-inner-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+  }
+
+  /* Ползунок: зелёная часть до выбранного значения (--p задаёт скрипт) */
+  .fcalc__range {
+    --p: 0%;
+    width: 100%;
+    height: 24px;
+    margin: -8px 0 0;
+    background: transparent;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .fcalc__range::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 999px;
+    background:
+      linear-gradient(var(--c-primary), var(--c-primary)) left / var(--p) 100% no-repeat,
+      var(--c-bg-soft);
+  }
+
+  .fcalc__range::-moz-range-track {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--c-bg-soft);
+  }
+
+  .fcalc__range::-moz-range-progress {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--c-primary);
+  }
+
+  .fcalc__range::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+    margin-top: -9px;
+    border: 4px solid #fff;
+    border-radius: 50%;
+    background: var(--c-primary);
+    box-shadow: 0 2px 8px rgb(14 23 38 / 0.25);
+    transition: transform 0.2s ease;
+    -webkit-appearance: none;
+  }
+
+  .fcalc__range::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border: 4px solid #fff;
+    border-radius: 50%;
+    background: var(--c-primary);
+    box-shadow: 0 2px 8px rgb(14 23 38 / 0.25);
+  }
+
+  .fcalc__range:focus-visible {
+    outline: none;
+  }
+
+  .fcalc__range:focus-visible::-webkit-slider-thumb {
+    outline: 3px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+
+  .fcalc__range:focus-visible::-moz-range-thumb {
+    outline: 3px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+
+  .fcalc__scale {
+    display: flex;
+    justify-content: space-between;
+    margin-top: -18px;
+    color: var(--c-muted);
+    font-size: 13px;
+  }
+
+  /* Срок — плитки выбора: заливка, наведение — зелёная, выбранный — зелёный с галочкой */
+  .fcalc__plans {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .fcalc__plan {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 56px;
+    padding: 0 20px;
+    border-radius: 14px;
+    background: var(--c-bg-soft);
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .fcalc__plan input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .fcalc__plan-badge {
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--c-primary-soft);
+    color: var(--c-primary-ink);
+    font-size: 13px;
+    font-weight: 700;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .fcalc__plan-check {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    margin-left: auto;
+    border-radius: 50%;
+    background: #fff;
+    color: var(--c-primary);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .fcalc__plan-check svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .fcalc__plan:has(input:checked) {
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  .fcalc__plan:has(input:checked) .fcalc__plan-badge {
+    background: rgb(255 255 255 / 0.16);
+    color: #fff;
+  }
+
+  .fcalc__plan:has(input:checked) .fcalc__plan-check {
+    opacity: 1;
+  }
+
+  .fcalc__plan:has(input:focus-visible) {
+    outline: 3px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+
+  /* Итог: строка цены за модем всегда на месте — высота панели не меняется */
+  .fcalc__total {
+    display: grid;
+    gap: 4px;
+    padding-top: 24px;
+    border-top: 1px solid var(--c-border);
+  }
+
+  .fcalc__total-label {
+    color: var(--c-muted);
+    font-size: 15px;
+  }
+
+  .fcalc__sum {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .fcalc__sum b {
+    font-size: 40px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fcalc__sum s {
+    color: var(--c-muted);
+    font-size: 17px;
+  }
+
+  .fcalc__unit {
+    color: var(--c-muted);
+    font-size: 15px;
+  }
+
+  .fcalc__actions {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+  }
+
+  .fcalc__actions .btn {
+    padding-inline: 32px;
+    white-space: nowrap;
+  }
+
+  /* Узкая панель (ПК до ~1280 px): две кнопки в ряд не помещаются — друг под другом, текст не переносится */
+  .fcalc {
+    container-type: inline-size;
+  }
+
+  @container (max-width: 600px) {
+    .fcalc__actions {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Вторая кнопка на белой панели — светло-зелёная заливка, при наведении зелёная */
+  .fcalc__buy {
+    background: var(--c-primary-soft);
+    color: var(--c-primary-ink);
+  }
+
+  .fcalc :focus-visible {
+    outline: 3px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+
+  /* Ряд действий под блоком — текстовая ссылка-действие со стрелкой */
+  .farm-desk__more {
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+  }
+
+  .farm-desk__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .farm-desk__link::after {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.3s ease;
+  }
+
+  /* Подчёркивание как у остальных ссылок-действий: выезжает слева, уезжает вправо */
+  .farm-desk__link .link__text {
+    padding-bottom: 2px;
+    background: linear-gradient(currentColor, currentColor) right bottom / 0 1.5px no-repeat;
+    transition: background-size 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+
+  .farm-desk__link:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .fcalc__stepper button:not(:disabled):hover {
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  .fcalc__range:hover::-webkit-slider-thumb {
+    transform: scale(1.1);
+  }
+
+  .fcalc__plan:hover {
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  .fcalc__plan:hover .fcalc__plan-badge {
+    background: rgb(255 255 255 / 0.16);
+    color: #fff;
+  }
+
+  .fcalc__buy:hover {
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  .farm-desk__link:hover .link__text {
+    background-position: left bottom;
+    background-size: 100% 1.5px;
+  }
+
+  .farm-desk__link:hover::after {
+    transform: translateX(3px) rotate(-45deg);
+  }
+}
+
+@media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
+  .fcalc__range::-webkit-slider-thumb,
+  .farm-desk__link::after,
+  .farm-desk__link .link__text {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   Футер на ПК — в духе Proxy-Seller, в нашем тёмном цвете:
+   сверху четыре колонки ссылок, посередине логотип с рейтингом · способы оплаты · соцсети,
+   внизу копирайт и документы. Разделы — тонкими линиями. Mobile — прежний футер
+   ========================================================================== */
+.fdesk {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .footer-mob {
+    display: none;
+  }
+
+  /* Во всю ширину окна, поля по 40 px; линии среднего ряда — от края до края */
+  .fdesk {
+    display: block;
+    max-width: none;
+    width: 100%;
+    padding-inline: 0;
+  }
+
+  .fdesk__cols,
+  .fdesk__mid,
+  .fdesk__bottom {
+    padding-inline: 40px;
+  }
+
+  /* Колонки — четыре равные ячейки. Вертикальные линии между ними — от верха подвала до горизонтальной
+     линии среднего ряда; текст каждой ячейки — в 40 px от левого края подвала или от линии слева */
+  .fdesk__cols {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding-inline: 0;
+  }
+
+  .fdesk__cols > nav {
+    padding: 100px 40px 64px;
+  }
+
+  .fdesk__cols > nav + nav {
+    border-left: 1px solid rgb(255 255 255 / 0.1);
+  }
+
+  .fdesk__title {
+    margin-bottom: 20px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .fdesk__cols ul {
+    display: grid;
+    gap: 12px;
+  }
+
+  /* Ссылка футера: приглушённая, при наведении белая, линия выезжает слева и уезжает вправо (как в Syntrex) */
+  .fdesk__link {
+    display: inline-block;
+    padding: 0 0 2px;
+    line-height: 1.5;
+    border: 0;
+    background: linear-gradient(currentColor, currentColor) right bottom / 0 1px no-repeat;
+    color: var(--c-on-dark-muted);
+    font: inherit;
+    font-size: 15px;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      color 0.2s ease,
+      background-size 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+
+  .fdesk__mid {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 64px;
+    padding-block: 48px;
+    border-block: 1px solid rgb(255 255 255 / 0.1);
+  }
+
+  .fdesk__brand {
+    display: grid;
+    gap: 12px;
+    justify-items: start;
+  }
+
+  .fdesk__rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--c-on-dark-muted);
+    font-size: 14px;
+    text-decoration: none;
+  }
+
+  .fdesk__rating b {
+    color: #fff;
+  }
+
+  .fdesk__label {
+    margin-bottom: 16px;
+    color: var(--c-on-dark-muted);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* На всю среднюю колонку — иначе ряд сжимается до одной плашки в строку */
+  .fdesk__pay {
+    justify-self: stretch;
+    text-align: center;
+  }
+
+  /* Способы оплаты — монохромные плашки-подписи, без пёстрых логотипов.
+     Через .fdesk — чтобы перебить старое «.footer ul { display: grid }» */
+  .fdesk .fdesk__pay-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  /* Высотой и скруглением — как кнопки соцсетей (44 px), чтобы ряд был одного веса */
+  .fdesk__pay-list li {
+    display: inline-flex;
+    align-items: center;
+    height: 44px;
+    padding: 0 14px;
+    border-radius: 12px;
+    background: rgb(255 255 255 / 0.06);
+    color: var(--c-on-dark-muted);
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .fdesk__social {
+    justify-self: end;
+  }
+
+  .fdesk__social-list {
+    display: flex;
+    gap: 8px;
+  }
+
+  .fdesk__social-btn {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgb(255 255 255 / 0.08);
+    color: #fff;
+    text-decoration: none;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .fdesk__social-btn svg {
+    display: block;
+    width: 22px;
+    height: 22px;
+  }
+
+  .fdesk__vk {
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  /* Узкий ПК: не помещаются в ряд — документы целиком уходят второй строкой, без переносов внутри */
+  .fdesk__bottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    margin-top: 40px;
+  }
+
+  /* Сверху отступ — внутри колонок (линии идут от самого верха подвала).
+     Снизу — столько же, сколько от линии до нижней строки: строка ровно посередине */
+  .footer:has(.fdesk) {
+    padding-top: 0;
+    padding-bottom: calc(40px + env(safe-area-inset-bottom));
+  }
+
+  .fdesk__copy {
+    color: var(--c-on-dark-muted);
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .fdesk__legal .fdesk__link {
+    white-space: nowrap;
+  }
+
+  .fdesk .fdesk__legal {
+    display: flex;
+    gap: 24px;
+  }
+
+  .fdesk__legal .fdesk__link {
+    font-size: 14px;
+  }
+
+  .fdesk :focus-visible {
+    outline: 3px solid var(--c-accent-light);
+    outline-offset: 3px;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .fdesk__link:hover {
+    background-position: left bottom;
+    background-size: 100% 1px;
+    color: #fff;
+  }
+
+  .fdesk__rating:hover {
+    color: #fff;
+  }
+
+  .fdesk__social-btn:hover {
+    background: var(--c-primary);
+  }
+}
+
+@media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
+  .fdesk__link {
+    transition: color 0.2s ease;
+  }
+}
+
+/* ==========================================================================
+   Белые кнопки на светло-серых секциях (ПК) сливались с фоном #fafafa —
+   как вторая кнопка на белой карточке: светло-зелёная заливка, при наведении зелёная
+   ========================================================================== */
+@media (min-width: 1024px) {
+  .section--soft .btn--outline,
+  .section--soft .steps-cta__test,
+  #reviews .reviews__actions .btn {
+    border-color: transparent;
+    background: var(--c-primary-soft);
+    color: var(--c-primary-ink);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  /* Метка «−15%» внутри кнопки — белая, чтобы не слиться с новой заливкой */
+  .section--soft .btn--outline .reviews__bonus,
+  #reviews .reviews__actions .btn .reviews__bonus {
+    background: #fff;
+    color: var(--c-primary-ink);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .section--soft .btn--outline:hover,
+  .section--soft .steps-cta__test:hover {
+    border-color: transparent;
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  .section--soft .btn--outline:hover .reviews__bonus {
+    background: rgb(255 255 255 / 0.16);
+    color: #fff;
+  }
+}
+
+/* ==========================================================================
+   Звёзды рейтинга — иконка владельца «звезда в кружке» вместо символов ★ / ☆.
+   Размер — от шрифта строки; незаполненные — бледные
+   ========================================================================== */
+.star,
+.review__stars,
+.rcard__stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  letter-spacing: 0;
+  vertical-align: -0.15em;
+}
+
+.star svg,
+.review__stars svg,
+.rcard__stars svg {
+  width: 1em;
+  height: 1em;
+  flex: none;
+}
+
+.review__stars svg.is-off,
+.rcard__stars svg.is-off,
+.star svg.is-off {
+  opacity: 0.25;
+}
+
+/* Крупные звёзды в окне отзыва — отдельной строкой, как раньше */
+.rcard__stars--big {
+  display: flex;
+}
+
+/* ==========================================================================
+   «Выбрано / готово» — иконка владельца «галочка в кружке»: кружок уже нарисован,
+   прежние подложки-кружки не нужны. Галочка вырезана — сквозь неё виден фон плашки
+   ========================================================================== */
+.success-icon {
+  background: none;
+}
+
+.success-icon svg {
+  width: 56px;
+  height: 56px;
+}
+
+@media (min-width: 1024px) {
+  .task[aria-pressed='true'] .task__mark {
+    background: none;
+    color: #fff;
+  }
+
+  .task[aria-pressed='true'] .task__mark svg:last-child {
+    width: 26px;
+    height: 26px;
+  }
+
+  .fcalc__plan-check {
+    width: 22px;
+    height: 22px;
+    background: none;
+    color: #fff;
+  }
+
+  .fcalc__plan-check svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .pcalc__check {
+    background: none;
+    color: var(--c-primary);
+  }
+
+  .pcalc__check svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* Ссылки под формой первого экрана (ПК): вместо мгновенного подчёркивания —
+   линия под текстом выезжает слева и уезжает вправо, как у остальных ссылок-действий */
+@media (min-width: 1024px) {
+  .hero__bottom .hero__link:hover {
+    text-decoration: none;
+  }
+
+  .hero__bottom .hero__link-full {
+    padding-bottom: 2px;
+    background: linear-gradient(currentColor, currentColor) right bottom / 0 1.5px no-repeat;
+    transition: background-size 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .hero__bottom .hero__link:hover .hero__link-full {
+    background-position: left bottom;
+    background-size: 100% 1.5px;
+  }
+}
+
+@media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
+  .hero__bottom .hero__link-full {
+    transition: none;
+  }
+}
+
+/* Плавающая кнопка «Чат» пока не нужна (решение владельца). Сам чат открывается
+   из «Техподдержки» в футере и «Онлайн-чата» в блоке поддержки */
+.chat-fab {
+  display: none;
+}
+
+/* ==========================================================================
+   Стрелки, нарисованные в CSS, — иконка владельца «Стрелочка» (маска, цвет — от текста).
+   «›» у ссылок-действий сдвигается вправо при наведении; «⌄» у таблицы при раскрытии смотрит вверх
+   ========================================================================== */
+:root {
+  --arrow-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M15.75,9.525,11.164,4.939A1.5,1.5,0,0,0,9.043,7.061l4.586,4.585a.5.5,0,0,1,0,.708L9.043,16.939a1.5,1.5,0,0,0,2.121,2.122l4.586-4.586A3.505,3.505,0,0,0,15.75,9.525Z'/%3E%3C/svg%3E");
+}
+
+.compare-all > summary::after {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  background: currentColor;
+  -webkit-mask: var(--arrow-mask) center / contain no-repeat;
+  mask: var(--arrow-mask) center / contain no-repeat;
+  transform: rotate(90deg);
+}
+
+.compare-all[open] > summary::after {
+  transform: rotate(-90deg);
+}
+
+@media (min-width: 1024px) {
+  .section--green .compare__more .link::after,
+  .faq-side__link::after,
+  .faq-side__more::after,
+  .pbanner__link::after,
+  .farm-desk__link::after {
+    width: 14px;
+    height: 14px;
+    border: 0;
+    background: currentColor;
+    -webkit-mask: var(--arrow-mask) center / contain no-repeat;
+    mask: var(--arrow-mask) center / contain no-repeat;
+    transform: none;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .section--green .compare__more .link:hover::after,
+  .faq-side__link:hover::after,
+  .faq-side__more:hover::after,
+  .pbanner__link:hover::after,
+  .farm-desk__link:hover::after {
+    transform: translateX(3px);
+  }
+}
+
+/* ==========================================================================
+   «Остались вопросы?» на ПК: метка «На связи 24/7» и три канала карточками — как задачи
+   в «Для чего вам прокси?»: светлая заливка, иконка в белой плашке, стрелка; при наведении — зелёная
+   заливка и белый текст, стрелка сдвигается. Mobile — прежние кнопки
+   ========================================================================== */
+.support__live,
+.support-cards {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .support__buttons {
+    display: none;
+  }
+
+  .support__live {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--c-primary-soft);
+    color: var(--c-primary-ink);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .support__live::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--c-primary);
+    box-shadow: 0 0 0 3px rgb(47 124 17 / 0.18);
+  }
+
+  /* Блок шире узкого контейнера — карточкам нужно место; заголовок и пояснение остаются по центру */
+  #support .support {
+    max-width: calc(1000px + 2 * var(--gutter));
+  }
+
+  .support-cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    margin-top: 40px;
+  }
+
+  .support-card {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto 1fr auto auto;
+    align-items: start;
+    min-height: 240px;
+    padding: 40px;
+    border: 0;
+    border-radius: 24px;
+    background: var(--c-bg-soft);
+    color: var(--c-text);
+    font: inherit;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .support-card__icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: #fff;
+    color: var(--c-primary);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .support-card__icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .support-card__arrow {
+    justify-self: end;
+    color: var(--c-muted);
+    transition:
+      transform 0.3s ease,
+      color 0.2s ease;
+  }
+
+  .support-card__arrow svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+  }
+
+  .support-card__name {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .support-card__sub {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    margin-top: 6px;
+    color: var(--c-muted);
+    font-size: 15px;
+    overflow-wrap: anywhere;
+    transition: color 0.2s ease;
+  }
+
+  /* Время ответа — плашкой справа от названия канала (как «30 sec median reply» у Proxy-Seller) */
+  .support-card__meta {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--c-primary-ink);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .support-card:focus-visible {
+    outline: 3px solid var(--c-focus);
+    outline-offset: 3px;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .support-card:hover {
+    background: var(--c-primary);
+    color: #fff;
+  }
+
+  .support-card:hover .support-card__icon,
+  .support-card:hover .support-card__meta {
+    background: rgb(255 255 255 / 0.16);
+    color: #fff;
+  }
+
+  .support-card:hover .support-card__sub,
+  .support-card:hover .support-card__arrow {
+    color: #fff;
+  }
+
+  .support-card:hover .support-card__arrow {
+    transform: translateX(3px);
+  }
+}
+
+@media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
+  .support-card__arrow {
+    transition: color 0.2s ease;
+  }
 }

@@ -40,6 +40,9 @@
             <li><a class="nav__link" href="#promo">Акции</a></li>
             <li><a class="nav__link" href="#faq">FAQ</a></li>
             <li><a class="nav__link" href="#support">Контакты</a></li>
+            <!-- Широкий ПК: «Блог» и «О нас» прямо в меню, без «Ещё» -->
+            <li class="nav__inline-extra"><a class="nav__link" href="#" data-stub="Блог">Блог</a></li>
+            <li class="nav__inline-extra"><a class="nav__link" href="#" data-stub="О нас">О нас</a></li>
             <li class="nav__more">
               <button class="nav__link nav__more-btn" type="button" aria-expanded="false" aria-controls="more-menu">
                 Ещё <span data-icon="chevron"></span>
@@ -97,6 +100,7 @@
             <div class="quickbuy__field" id="qb-third-field"></div>
             <div class="quickbuy__total">
               <span class="quickbuy__label" id="qb-total-label">Итого</span>
+              <span class="qb-stock" id="qb-stock"></span>
               <span class="quickbuy__sum"><b id="qb-total"></b> <s id="qb-old"></s> <span class="quickbuy__unit" id="qb-unit"></span></span>
               <span class="quickbuy__extra" id="qb-extra"></span>
             </div>
@@ -107,8 +111,9 @@
         <!-- Нижняя полоса первого экрана на градиенте: подбор, тест, бот -->
         <div class="hero__bottom">
           <nav class="container hero__links" aria-label="Другие способы начать">
-            <a class="hero__link" href="#picker"><span data-icon="seo"></span><span class="hero__link-full">Не знаете, что выбрать? Подбор по задаче</span><span class="hero__link-short" aria-hidden="true">Подбор по задаче</span></a>
+            <!-- ПК: самый длинный пункт по центру, короткие по бокам. Mobile — прежний порядок (стили) -->
             <button type="button" class="hero__link" data-open-test><span data-icon="gift"></span><span class="hero__link-full">Получить бесплатный тест</span><span class="hero__link-short" aria-hidden="true">Бесплатный тест</span></button>
+            <a class="hero__link" href="#picker"><span data-icon="search"></span><span class="hero__link-full">Не знаете, что выбрать? Подбор по задаче</span><span class="hero__link-short" aria-hidden="true">Подбор по задаче</span></a>
             <a class="hero__link" href="#" data-stub="Telegram-бот"><span data-icon="telegram"></span><span class="hero__link-full">Купить в Telegram-боте</span><span class="hero__link-short" aria-hidden="true">Telegram-бот</span></a>
           </nav>
         </div>
@@ -146,9 +151,16 @@
             <h2 id="picker-title">Для чего вам прокси?</h2>
             <p class="section__lead">Выберите задачу — подскажем подходящий тип и цену.</p>
           </div>
-          <div class="tasks" id="tasks" role="group" aria-label="Задачи"></div>
-          <div class="reco" id="reco" aria-live="polite">
-            <p class="reco__placeholder">Нажмите на задачу — здесь появится рекомендация.</p>
+          <!-- ПК: задачи слева, рекомендация справа; mobile — рекомендация под задачами -->
+          <div class="picker">
+            <div class="tasks" id="tasks" role="group" aria-label="Задачи"></div>
+            <div class="reco" id="reco" aria-live="polite">
+              <p class="reco__placeholder">Нажмите на задачу — здесь появится рекомендация.</p>
+              <div class="reco__empty">
+                <p class="reco__empty-title">Выберите задачу</p>
+                <p>Подскажем подходящий тип прокси, объясним почему и покажем цену.</p>
+              </div>
+            </div>
           </div>
           <p class="picker__help">
             Не уверены? <a class="link" href="#" data-stub="Telegram">Спросите в Telegram</a>, подберём за 5 минут.
@@ -157,7 +169,7 @@
       </section>
 
       <!-- 5. Типы прокси -->
-      <section class="section section--soft" id="compare" aria-labelledby="compare-title">
+      <section class="section section--soft section--green" id="compare" aria-labelledby="compare-title">
         <div class="container">
           <div class="section__head">
             <h2 id="compare-title">Типы прокси</h2>
@@ -171,10 +183,9 @@
             <div class="compare-all__body">
               <div class="compare-table-wrap" id="compare-table"></div>
               <div class="ccards" id="compare-cards" role="list" aria-label="Типы прокси"></div>
-              <p class="footnote" id="compare-footnote"></p>
             </div>
           </details>
-          <p class="compare__more"><a class="link" href="#" data-stub="Страницы типов прокси">Подробнее о каждом типе →</a></p>
+          <p class="compare__more"><a class="link" href="#" data-stub="Страницы типов прокси"><span class="link__text">Подробнее о каждом типе</span> <span class="link__arrow" aria-hidden="true">→</span></a></p>
         </div>
       </section>
 
@@ -238,28 +249,48 @@
             <h2 id="how-title">Как это работает</h2>
             <p class="section__lead">От выбора до подключения — около 10 минут.</p>
           </div>
+          <!-- ПК: шкала времени «0 → ≈ 10 мин» заполняется, когда блок на экране; шаги отмечаются по очереди -->
+          <div class="steps-track" aria-hidden="true">
+            <span class="steps-track__label">0 мин</span>
+            <span class="steps-track__scale">
+              <span class="steps-track__bar"><span class="steps-track__fill"></span></span>
+              <span class="steps-track__now"></span>
+            </span>
+            <span class="steps-track__label">≈ 10 мин</span>
+          </div>
           <ol class="steps">
             <li class="steps__item">
               <span class="steps__num" aria-hidden="true">1</span>
+              <span class="steps__index" aria-hidden="true">/01</span>
+              <span class="steps__time">≈ 2 мин</span>
               <h3>Выберите</h3>
               <p>Тип прокси, страну и срок аренды.</p>
             </li>
             <li class="steps__item">
               <span class="steps__num" aria-hidden="true">2</span>
+              <span class="steps__index" aria-hidden="true">/02</span>
+              <span class="steps__time">≈ 1 мин</span>
               <h3>Оплатите</h3>
               <p>Удобным способом: СБП, картой или криптовалютой.</p>
             </li>
             <li class="steps__item">
               <span class="steps__num" aria-hidden="true">3</span>
+              <span class="steps__index" aria-hidden="true">/03</span>
+              <span class="steps__time">до 5 мин</span>
               <h3>Получите доступы</h3>
               <p>За 5 минут — в личном кабинете и на почте.</p>
             </li>
             <li class="steps__item">
               <span class="steps__num" aria-hidden="true">4</span>
+              <span class="steps__index" aria-hidden="true">/04</span>
+              <span class="steps__time">≈ 2 мин</span>
               <h3>Подключите</h3>
               <p>В браузере, антидетекте или софте. <a class="link" href="#" data-stub="Инструкции по настройке">Инструкции по настройке</a></p>
             </li>
           </ol>
+          <div class="steps-cta">
+            <a class="btn btn--primary btn--lg" href="#buy">Выбрать прокси</a>
+            <button type="button" class="btn btn--lg steps-cta__test" data-open-test>Получить бесплатный тест</button>          </div>
         </div>
       </section>
 
@@ -272,6 +303,11 @@
           </div>
           <ul class="platforms" id="platforms"></ul>
 
+          <!-- ПК: бегущая лента отзывов на всю ширину; наведение — пауза. Mobile — карусель ниже -->
+          <div class="rmarquee" id="review-marquee" role="region" aria-label="Отзывы клиентов">
+            <div class="rmarquee__track" id="review-marquee-track"></div>
+          </div>
+
           <div class="carousel">
             <div class="carousel__track" id="review-track" tabindex="0" role="region" aria-label="Отзывы клиентов, листаются стрелками"></div>
             <div class="carousel__nav">
@@ -283,18 +319,18 @@
 
           <div class="reviews__actions">
             <a class="btn btn--outline" href="#" data-stub="Все отзывы">Все отзывы</a>
-            <a class="btn btn--outline" href="#" data-stub="Форма отзыва">Оставить отзыв</a>
+            <a class="btn btn--outline" href="#" data-stub="Форма отзыва">Оставить отзыв<span class="reviews__bonus" id="review-bonus"></span></a>
             <span class="badge badge--good" id="review-promo"></span>
           </div>
         </div>
       </section>
 
       <!-- 10. Акции -->
-      <section class="section" id="promo" aria-labelledby="promo-title">
+      <section class="section section--accent" id="promo" aria-labelledby="promo-title">
         <div class="container">
           <div class="section__head">
             <h2 id="promo-title">Акции и купоны</h2>
-            <p class="section__lead">Скопируйте купон или нажмите «Применить» — скидка сразу появится в заказе.</p>
+            <p class="section__lead">Нажмите «Применить» — скидка сразу появится в заказе, а код скопируется.</p>
           </div>
           <div class="promos" id="promos"></div>
         </div>
@@ -306,6 +342,8 @@
           <div class="section__head">
             <h2 id="faq-title">Частые вопросы</h2>
           </div>
+          <!-- ПК: вопросы в две колонки, под ними зелёная полоса «Не нашли ответ?». Mobile — прежний список -->
+          <div class="faq-layout">
           <div class="faq">
             <details class="faq__item">
               <summary>Какой тип прокси выбрать?</summary>
@@ -385,6 +423,17 @@
               </div>
             </details>
           </div>
+          <aside class="faq-side" aria-label="Не нашли ответ?">
+            <div class="faq-side__top">
+              <p class="faq-side__title">Не нашли ответ?</p>
+              <p class="faq-side__text">Напишите в Telegram — ответим за 5 минут, днём и ночью. Поможем выбрать, подключить и заменить прокси.</p>
+            </div>
+            <div class="faq-side__actions">
+              <a class="btn btn--lg faq-side__btn" href="#" data-stub="Telegram">Написать в Telegram</a>
+              <a class="btn btn--lg faq-side__more" href="#" data-stub="Все ответы">Все вопросы и ответы</a>
+            </div>
+          </aside>
+          </div>
           <div class="section__cta section__cta--left">
             <a class="btn btn--outline" href="#" data-stub="Все ответы">Все ответы</a>
           </div>
@@ -392,8 +441,8 @@
       </section>
 
       <!-- 12. ProxyFarm -->
-      <section class="section" id="farm" aria-labelledby="farm-title">
-        <div class="container">
+      <section class="section section--dark" id="farm" aria-labelledby="farm-title">
+        <div class="container farm-mob">
           <div class="farm">
             <div class="farm__text">
               <p class="eyebrow eyebrow--light">Софт ProxyFarm для владельцев ферм</p>
@@ -410,10 +459,48 @@
             </div>
           </div>
         </div>
+
+        <!-- ПК: тёмная секция во всю ширину — заголовок по центру, слева три плюса, справа калькулятор лицензии.
+             Mobile — карточка выше -->
+        <div class="container farm-desk">
+          <div class="section__head">
+            <p class="farm-desk__eyebrow">Софт ProxyFarm для владельцев ферм</p>
+            <h2>Свой прокси-бизнес на модемах</h2>
+            <p class="section__lead">Отдельный продукт для владельцев модемов — не путать с покупкой прокси.</p>
+          </div>
+          <div class="farm-desk__grid">
+            <ol class="farm-desk__points" id="farm-points"></ol>
+            <div class="fcalc" role="group" aria-label="Расчёт стоимости лицензии ProxyFarm">
+              <div class="fcalc__row">
+                <label class="fcalc__label" for="fcalc-input">Сколько у вас модемов</label>
+                <span class="fcalc__stepper">
+                  <button type="button" data-fcalc-step="-1" aria-label="Меньше модемов">−</button>
+                  <input id="fcalc-input" type="number" min="1" inputmode="numeric" autocomplete="off">
+                  <button type="button" data-fcalc-step="1" aria-label="Больше модемов">+</button>
+                </span>
+              </div>
+              <input class="fcalc__range" id="fcalc-range" type="range" min="1" step="1" aria-label="Количество модемов">
+              <div class="fcalc__scale" aria-hidden="true"><span>1</span><span id="fcalc-max"></span></div>
+              <div class="fcalc__plans" id="fcalc-plans" role="radiogroup" aria-label="Срок оплаты"></div>
+              <div class="fcalc__total">
+                <span class="fcalc__total-label" id="fcalc-total-label"></span>
+                <span class="fcalc__sum"><b id="fcalc-total"></b><s id="fcalc-old"></s></span>
+                <span class="fcalc__unit" id="fcalc-unit"></span>
+              </div>
+              <div class="fcalc__actions">
+                <a class="btn btn--primary btn--lg" href="#" data-stub="Регистрация в ProxyFarm" id="fcalc-trial">Попробовать бесплатно</a>
+                <button type="button" class="btn btn--lg fcalc__buy" data-fcalc-buy>Купить лицензию</button>
+              </div>
+            </div>
+          </div>
+          <div class="farm-desk__more">
+            <a class="farm-desk__link" href="#" data-stub="Страница ProxyFarm"><span class="link__text">Подробнее о ProxyFarm</span></a>
+          </div>
+        </div>
       </section>
 
       <!-- 13. Партнёрская программа -->
-      <section class="partner-strip" aria-labelledby="partner-title">
+      <section class="partner-strip section--accent" id="partner" aria-labelledby="partner-title">
         <div class="container partner-strip__inner">
           <p class="partner-strip__text">
             <b id="partner-title">Партнёрская программа.</b>
@@ -421,13 +508,71 @@
           </p>
           <a class="btn btn--outline" href="#" data-stub="Партнёрская программа">Стать партнёром</a>
         </div>
+
+        <!-- ПК: баннер партнёрской программы — зелёная карточка, шаги и крупная цифра. Mobile — строка выше -->
+        <div class="container pbanner">
+          <div class="pbanner__main">
+            <p class="pbanner__eyebrow">Партнёрская программа</p>
+            <h2 class="pbanner__title">Зарабатывайте <span class="nowrap">до <span data-partner-percent></span>%</span> с каждой оплаты</h2>
+            <p class="pbanner__text">Приглашайте клиентов по своей партнёрской ссылке — процент начисляется со всех их платежей, а не только с первого.</p>
+            <!-- Цепочка «ссылка → делитесь → доход»: каждый шаг ярче, результат — белой плашкой -->
+            <ol class="pbanner__steps">
+              <li><b>Получите ссылку</b><span>в личном кабинете</span></li>
+              <li><b>Делитесь ссылкой</b><span>с аудиторией</span></li>
+              <li class="is-result"><b>Получайте <span class="nowrap">до <span data-partner-percent></span>%</span></b><span>с каждой оплаты</span></li>
+            </ol>
+            <!-- Мини-расчёт дохода: выбор числа клиентов → сумма в месяц на реальной цене сайта -->
+            <div class="pcalc">
+              <p class="pcalc__q" id="pcalc-q">Сколько клиентов приведёте?</p>
+              <div class="pcalc__chips" id="pcalc-chips" role="radiogroup" aria-labelledby="pcalc-q"></div>
+              <p class="pcalc__result" aria-live="polite"><span class="pcalc__sum" id="pcalc-sum"></span> в месяц</p>
+              <p class="pcalc__note" id="pcalc-note"></p>
+            </div>
+            <div class="pbanner__actions">
+              <a class="btn btn--lg pbanner__btn" href="#" data-stub="Партнёрская программа">Стать партнёром</a>
+              <a class="pbanner__link" href="#" data-stub="Условия партнёрской программы"><span class="link__text">Условия программы</span></a>
+            </div>
+          </div>
+          <div class="pbanner__visual" aria-hidden="true">
+            <span class="pbanner__ring pbanner__ring--outer"></span>
+            <span class="pbanner__ring pbanner__ring--inner"></span>
+            <span class="pbanner__big"><small>до</small><span data-partner-percent></span><i>%</i></span>
+            <span class="pbanner__coin pbanner__coin--a">₽</span>
+            <span class="pbanner__coin pbanner__coin--b">₽</span>
+            <span class="pbanner__coin pbanner__coin--c">₽</span>
+          </div>
+        </div>
       </section>
 
       <!-- 14. Поддержка -->
       <section class="section" id="support" aria-labelledby="support-title">
         <div class="container container--narrow support">
+          <p class="support__live">На связи 24/7</p>
           <h2 id="support-title"></h2>
           <p class="section__lead">Выберите удобный способ — в любом из них отвечают живые люди.</p>
+          <!-- ПК: каналы — карточками, как задачи в «Для чего вам прокси?». Mobile — кнопки ниже -->
+          <div class="support-cards">
+            <a class="support-card" href="#" data-stub="Telegram поддержки">
+              <span class="support-card__icon" data-icon="telegram"></span>
+              <span class="support-card__arrow" data-icon="arrowRight"></span>
+              <span class="support-card__name">Telegram</span>
+              <span class="support-card__sub">Самый быстрый способ</span>
+              <span class="support-card__meta">≈ <span data-support-minutes></span> мин</span>
+            </a>
+            <button type="button" class="support-card" data-open-chat>
+              <span class="support-card__icon" data-icon="chat"></span>
+              <span class="support-card__arrow" data-icon="arrowRight"></span>
+              <span class="support-card__name">Онлайн-чат</span>
+              <span class="support-card__sub">Прямо здесь, на сайте</span>
+              <span class="support-card__meta">≈ <span data-support-minutes></span> мин</span>
+            </button>
+            <a class="support-card" data-support-email>
+              <span class="support-card__icon" data-icon="mail"></span>
+              <span class="support-card__arrow" data-icon="arrowRight"></span>
+              <span class="support-card__name">E-mail</span>
+              <span class="support-card__sub" data-support-email-text></span>
+            </a>
+          </div>
           <div class="support__buttons">
             <a class="btn btn--outline btn--lg" href="#" data-stub="Telegram поддержки"><span data-icon="telegram"></span>Telegram</a>
             <button type="button" class="btn btn--outline btn--lg" data-open-chat><span data-icon="chat"></span>Онлайн-чат</button>
@@ -439,7 +584,7 @@
 
     <!-- 15. Футер -->
     <footer class="footer">
-      <div class="container">
+      <div class="container footer-mob">
         <div class="footer__cols">
           <div class="footer__brand">
             <a class="logo logo--light" href="#top" aria-label="Frigate Proxy — наверх">
@@ -490,6 +635,96 @@
           </nav>
         </div>
         <p class="footer__copy">© 2021–2026 Frigate Proxy. Прототип главной страницы, данные примерные.</p>
+      </div>
+
+      <!-- ПК: футер в духе Proxy-Seller — сверху четыре колонки ссылок (разделы футера клиента),
+           посередине логотип с рейтингом, способы оплаты и соцсети, внизу копирайт и документы. Mobile — блок выше -->
+      <div class="container fdesk">
+        <div class="fdesk__cols">
+          <nav aria-label="Типы прокси">
+            <h2 class="fdesk__title">Типы прокси</h2>
+            <ul>
+              <li><a class="fdesk__link" href="#" data-open-config="private">Мобильные приватные</a></li>
+              <li><a class="fdesk__link" href="#" data-open-config="elite">Мобильные элитные</a></li>
+              <li><a class="fdesk__link" href="#" data-open-config="shared">Мобильные общие</a></li>
+              <li><a class="fdesk__link" href="#" data-open-config="ipv4">Серверные IPv4</a></li>
+              <li><a class="fdesk__link" href="#hero">Купить прокси</a></li>
+              <li><a class="fdesk__link" href="#" data-stub="Доступные прокси">Доступные прокси</a></li>
+            </ul>
+          </nav>
+          <nav aria-label="Покупателям">
+            <h2 class="fdesk__title">Покупателям</h2>
+            <ul>
+              <li><a class="fdesk__link" href="#" data-stub="Личный кабинет">Личный кабинет</a></li>
+              <li><a class="fdesk__link" href="#farm">Прокси-ферма</a></li>
+              <li><button type="button" class="fdesk__link" data-open-cart>Корзина</button></li>
+              <li><a class="fdesk__link" href="#partner">Партнёрская программа</a></li>
+              <li><a class="fdesk__link" href="#promo">Акции и скидки</a></li>
+              <li><a class="fdesk__link" href="#" data-stub="API для разработчиков">API для разработчиков</a></li>
+            </ul>
+          </nav>
+          <nav aria-label="Компания">
+            <h2 class="fdesk__title">Компания</h2>
+            <ul>
+              <li><a class="fdesk__link" href="#" data-stub="О нас">О нас</a></li>
+              <li><a class="fdesk__link" href="#" data-stub="Блог">Блог</a></li>
+              <li><a class="fdesk__link" href="#" data-stub="Обновления сервиса">Обновления сервиса</a></li>
+              <li><a class="fdesk__link" href="#support">Контакты</a></li>
+            </ul>
+          </nav>
+          <nav aria-label="Поддержка">
+            <h2 class="fdesk__title">Поддержка</h2>
+            <ul>
+              <li><button type="button" class="fdesk__link" data-open-chat>Техподдержка</button></li>
+              <li><a class="fdesk__link" href="#faq">FAQ</a></li>
+              <li><a class="fdesk__link" href="#" data-stub="Политика конфиденциальности">Политика конфиденциальности</a></li>
+              <li><a class="fdesk__link" href="#" data-stub="Условия использования">Условия использования</a></li>
+            </ul>
+          </nav>
+        </div>
+
+        <div class="fdesk__mid">
+          <div class="fdesk__brand">
+            <a class="logo logo--light" href="#top" aria-label="Frigate Proxy — наверх">
+              <span class="logo__mark" data-icon="logo"></span>
+              <span class="logo__text">
+                <span class="logo__name">Frigate Proxy</span>
+                <span class="logo__tagline">Анонимные прокси</span>
+              </span>
+            </a>
+            <a class="fdesk__rating" href="#reviews" id="footer-rating"></a>
+          </div>
+          <div class="fdesk__pay">
+            <p class="fdesk__label" id="fdesk-pay-label">Способы оплаты</p>
+            <ul class="fdesk__pay-list" aria-labelledby="fdesk-pay-label">
+              <li>СБП</li>
+              <li>Visa</li>
+              <li>Mastercard</li>
+              <li>МИР</li>
+              <li>ЮMoney</li>
+              <li>WebMoney</li>
+              <li>FK Wallet</li>
+              <li>Volet</li>
+              <li>Криптовалюта</li>
+            </ul>
+          </div>
+          <div class="fdesk__social">
+            <p class="fdesk__label">Мы на связи</p>
+            <div class="fdesk__social-list">
+              <a class="fdesk__social-btn" href="#" data-stub="Сообщество VK" aria-label="Сообщество VK"><span class="fdesk__vk" aria-hidden="true">VK</span></a>
+              <a class="fdesk__social-btn" href="#" data-stub="Telegram-канал" aria-label="Telegram-канал"><span data-icon="telegram"></span></a>
+              <a class="fdesk__social-btn" href="#" data-stub="YouTube-канал" aria-label="YouTube-канал"><span data-icon="youtube"></span></a>
+            </div>
+          </div>
+        </div>
+
+        <div class="fdesk__bottom">
+          <p class="fdesk__copy">© 2021–2026 Frigate Proxy — анонимные прокси. Все права защищены.</p>
+          <ul class="fdesk__legal">
+            <li><a class="fdesk__link" href="#" data-stub="Политика конфиденциальности">Политика конфиденциальности</a></li>
+            <li><a class="fdesk__link" href="#" data-stub="Условия использования и договор оферты">Условия использования и договор оферты</a></li>
+          </ul>
+        </div>
       </div>
     </footer>
 
@@ -570,7 +805,7 @@
           </div>
         </form>
         <div class="modal__body modal__success" id="checkout-success" hidden>
-          <span class="success-icon" data-icon="check"></span>
+          <span class="success-icon" data-icon="checkCircle"></span>
           <h3>Заказ оформлен</h3>
           <p id="checkout-success-text"></p>
           <p class="muted">Это прототип: оплата не проводится. В рабочей версии здесь откроется страница платёжной системы.</p>
@@ -580,6 +815,16 @@
     </dialog>
 
     <!-- Модалка корзины -->
+    <dialog class="modal" id="review-dialog" aria-labelledby="review-dialog-title">
+      <div class="modal__inner">
+        <header class="modal__head">
+          <h2 class="modal__title" id="review-dialog-title">Отзыв</h2>
+          <button type="button" class="icon-btn icon-btn--plain" data-close aria-label="Закрыть"><span data-icon="close"></span></button>
+        </header>
+        <div class="modal__body" id="review-dialog-body"></div>
+      </div>
+    </dialog>
+
     <dialog class="modal" id="cart-dialog" aria-labelledby="cart-title">
       <div class="modal__inner">
         <header class="modal__head">
@@ -625,7 +870,7 @@
           </div>
         </form>
         <div class="modal__body modal__success" id="test-success" hidden>
-          <span class="success-icon" data-icon="check"></span>
+          <span class="success-icon" data-icon="checkCircle"></span>
           <h3>Тестовый прокси отправлен</h3>
           <p id="test-success-text"></p>
           <button type="button" class="btn btn--outline btn--block" data-close data-goto-buy>Перейти к покупке</button>

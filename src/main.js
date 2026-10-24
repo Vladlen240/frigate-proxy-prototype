@@ -1,6 +1,6 @@
 import './styles.css';
 import data from './data.json';
-import { icon, hydrateIcons } from './icons.js';
+import { icon, hydrateIcons, INFO_PATH } from './icons.js';
 
 /* ==========================================================================
    Утилиты
@@ -28,6 +28,117 @@ const scrollBehavior = () => (reducedMotion.matches ? 'auto' : 'smooth');
 const mqSmall = window.matchMedia('(max-width: 767px)');
 const mqNoSidebar = window.matchMedia('(max-width: 959px)');
 
+/* Типограф: короткие предлоги и союзы не остаются в конце строки («по | ссылке» → «по ссылке» вместе),
+   число не отрывается от единицы, тире не начинает строку. Работает для всего текста страницы,
+   включая тот, что появляется после переключений */
+const SHORT_WORDS = /(^|[\s(«"„ ])(в|во|к|ко|с|со|у|о|об|и|а|но|по|на|от|до|из|за|не|ни|для|без|при|про|над|под|или|как)\s+(?=\S)/gi;
+// Число не отрывается от следующего слова или единицы: «10 клиентов», «1 мин», «290 ₽»
+const NUM_WORD = /(\d)\s+(?=[^\s\d/—–-])/g;
+// Латинская аббревиатура с дефисом не рвётся: «TCP-отпечаток», «IP-адрес»
+const ABBR_HYPHEN = /([A-Za-z]{2,})-(?=[а-яё])/gi;
+
+function typographText(s) {
+  return s
+    .replace(SHORT_WORDS, '$1$2 ')
+    .replace(SHORT_WORDS, '$1$2 ')
+    .replace(NUM_WORD, '$1 ')
+    .replace(ABBR_HYPHEN, '$1‑')
+    // «Мбит/с», «ГБ/мес» не рвутся на косой черте. Только если невидимого склеивающего знака ещё нет —
+    // иначе правило срабатывало бы на собственный результат бесконечно
+    .replace(/(\S)\/(?=[^\s⁠])/g, '$1/⁠')
+    .replace(/ (?=[—–] )/g, ' ');
+}
+
+function typographNode(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: (n) =>
+      n.parentElement?.closest('script, style, textarea, input, [contenteditable]') || !/\s/.test(n.nodeValue)
+        ? NodeFilter.FILTER_REJECT
+        : NodeFilter.FILTER_ACCEPT,
+  });
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    const next = typographText(n.nodeValue);
+    if (next !== n.nodeValue) n.nodeValue = next;
+  }
+}
+
+/* «Как это работает» на ПК: шаги загораются по очереди, шкала растёт до накопленного времени шага
+   (2 → 3 → 8 → 10 мин) с меткой над краем. Наведение на карточку ставит её шаг и паузу.
+   Вне экрана и при «уменьшить движение» — не листается */
+const STEP_MINUTES = [2, 3, 8, 10];
+const STEP_TOTAL = 10;
+
+function bindSteps() {
+  const section = $('#how');
+  const list = $('.steps', section);
+  const items = $$('.steps__item', section);
+  const fill = $('.steps-track__fill', section);
+  const now = $('.steps-track__now', section);
+  let active = -1;
+  let timer = 0;
+  let hover = false;
+  let visible = false;
+
+  const setStep = (i) => {
+    active = i;
+    const min = i < 0 ? STEP_TOTAL : STEP_MINUTES[i];
+    const pct = (min / STEP_TOTAL) * 100;
+    fill.style.transform = `scaleX(${min / STEP_TOTAL})`;
+    now.style.left = `${pct}%`;
+    now.textContent = `${min} мин`;
+    now.hidden = i < 0;
+    items.forEach((it, k) => {
+      it.classList.toggle('is-active', k === i);
+      it.classList.toggle('is-done', i < 0 || k <= i);
+    });
+  };
+
+  const schedule = () => {
+    clearTimeout(timer);
+    if (hover || !visible || reducedMotion.matches || !mqDesktop.matches) return;
+    // Последний шаг держим дольше — шкала заполнена целиком, потом с начала
+    timer = setTimeout(() => {
+      setStep(active >= items.length - 1 ? 0 : active + 1);
+      schedule();
+    }, active === items.length - 1 ? 3600 : 2200);
+  };
+
+  items.forEach((it, i) => {
+    it.addEventListener('pointerenter', () => {
+      hover = true;
+      setStep(i);
+      schedule();
+    });
+    it.addEventListener('focusin', () => setStep(i));
+  });
+  list.addEventListener('pointerleave', () => {
+    hover = false;
+    schedule();
+  });
+
+  if (reducedMotion.matches) setStep(-1);
+  new IntersectionObserver(
+    ([en]) => {
+      visible = en.isIntersecting;
+      if (visible && active === -1 && !reducedMotion.matches) setStep(0);
+      schedule();
+    },
+    { threshold: 0.4 },
+  ).observe(list);
+}
+
+function bindTypograph() {
+  typographNode(document.body);
+  new MutationObserver((list) => {
+    for (const m of list) {
+      if (m.type === 'characterData') {
+        const next = typographText(m.target.nodeValue);
+        if (next !== m.target.nodeValue) m.target.nodeValue = next;
+      } else m.addedNodes.forEach((n) => (n.nodeType === 3 ? typographNode(n.parentNode ?? n) : n.nodeType === 1 && typographNode(n)));
+    }
+  }).observe(document.body, { childList: true, subtree: true, characterData: true });
+}
+
 const types = data.types;
 const typeById = Object.fromEntries(types.map((t) => [t.id, t]));
 const periodById = Object.fromEntries(data.periods.map((p) => [p.id, p]));
@@ -36,10 +147,15 @@ const countryById = Object.fromEntries(data.countries.map((c) => [c.id, c]));
 /* Подсказка «i» к термину и пометка «вопрос к владельцу» */
 const tip = (key) => {
   const text = data.terms[key];
-  return `<button type="button" class="tip" data-tip="${esc(text)}" aria-label="Подсказка: ${esc(text)}">i</button>`;
+  // «i» — иконкой «Информация» владельца: залитый кружок с вырезанной буквой
+  return `<button type="button" class="tip" data-tip="${esc(text)}" aria-label="Подсказка: ${esc(text)}"><svg class="tip__i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">${INFO_PATH}</svg></button>`;
 };
-const ask = (text) =>
-  `<button type="button" class="ask" data-tip="${esc(`Вопрос к владельцу: ${text}`)}" aria-label="Вопрос к владельцу сайта: ${esc(text)}">?</button>`;
+// Ряд из пяти звёзд-иконок: заполненные по оценке, остальные бледные (is-off)
+const starsRow = (rating) =>
+  Array.from({ length: 5 }, (_, i) => (i < rating ? icon('star') : icon('star').replace('<svg', '<svg class="is-off"'))).join('');
+
+// Вопросы к владельцу на сайте не показываем — они собраны в NOTES.md
+const ask = () => '';
 
 const ASK_TEXTS = {
   test: data.test.question,
@@ -152,14 +268,15 @@ const reviewsRounded = `${Math.floor(reviewsTotal / 1000) * 1000}+`;
 function renderStatic() {
   $$('[data-pay-icons]').forEach((el) => (el.innerHTML = payIconsHtml()));
   // Первый экран: оценка над заголовком
-  $('#hero-rating').innerHTML = `<span class="star" aria-hidden="true">★★★★★</span> <b>${ratingStr}</b> · ${reviewsRounded} отзывов`;
+  $('#hero-rating').innerHTML = `<span class="star" aria-hidden="true">${starsRow(5)}</span> <b>${ratingStr}</b> · ${reviewsRounded} отзывов`;
+  $('#footer-rating').innerHTML = `<span class="star" aria-hidden="true">${starsRow(5)}</span> <b>${ratingStr}</b> · ${reviewsRounded} отзывов`;
 
   // Полоса доверия
   const { years, clients, sold } = data.stats;
   $('#trust-title').textContent = `Нам доверяют ${nf.format(clients)} ${plural(clients, ['клиент', 'клиента', 'клиентов'])}`;
   $('#trust-list').innerHTML = `
     <li class="trust__item">
-      <a class="trust__rating" href="#reviews"><span class="star" aria-hidden="true">★</span><b>${ratingStr}</b> · ${reviewsRounded} отзывов</a>
+      <a class="trust__rating" href="#reviews"><span class="star" aria-hidden="true">${icon('star')}</span><b>${ratingStr}</b> · ${reviewsRounded} отзывов</a>
       ${ask('Средняя оценка по площадкам посчитана по примерным данным.')}
     </li>
     <li class="trust__item"><b>${years} лет</b> на рынке</li>
@@ -184,7 +301,7 @@ function renderStatic() {
       (p) => `<li><a class="platform" href="#" data-stub="Отзывы на площадке ${esc(p.name)}">
         <span class="platform__logo" style="background:${p.color}" aria-hidden="true">${esc(p.letter)}</span>
         <span><span class="platform__name">${esc(p.name)}</span>
-        <span class="platform__meta"><span class="star" aria-hidden="true">★</span> <b>${p.rating.toFixed(1).replace('.', ',')}</b> · ${nf.format(p.count)} ${plural(p.count, ['отзыв', 'отзыва', 'отзывов'])}</span></span>
+        <span class="platform__meta"><span class="star" aria-hidden="true">${icon('star')}</span> <b>${p.rating.toFixed(1).replace('.', ',')}</b> · ${nf.format(p.count)} ${plural(p.count, ['отзыв', 'отзыва', 'отзывов'])}</span></span>
       </a></li>`,
     )
     .join('');
@@ -197,11 +314,15 @@ function renderStatic() {
   $('#farm-price-note').textContent = `−${f.yearDiscount}% при оплате за год`;
   $('#farm-trial').textContent = `Попробовать ${f.trialDays} дней бесплатно`;
   $('#partner-text').textContent = `До ${data.partnerProgram.percent}% с каждой оплаты приглашённых клиентов.`;
+  $$('[data-partner-percent]').forEach((el) => (el.textContent = data.partnerProgram.percent));
+  renderPartnerCalc();
 
   const mins = data.support.responseMinutes;
   $('#support-title').innerHTML = `Остались вопросы? Ответим в течение ${mins} ${plural(mins, ['минуты', 'минут', 'минут'])}${ask('Среднее время ответа поддержки.')}`;
   $$('[data-support-minutes]').forEach((el) => (el.textContent = mins));
   $('#support-email').href = `mailto:${data.support.email}`;
+  $$('[data-support-email]').forEach((el) => (el.href = `mailto:${data.support.email}`));
+  $$('[data-support-email-text]').forEach((el) => (el.textContent = data.support.email));
 
   $$('[data-term]').forEach((el) => (el.outerHTML = tip(el.dataset.term)));
   $$('[data-ask]').forEach((el) => (el.outerHTML = ask(ASK_TEXTS[el.dataset.ask])));
@@ -214,7 +335,10 @@ function renderTasks() {
   $('#tasks').innerHTML = data.tasks
     .map(
       (t) => `<button type="button" class="task" data-task="${t.id}" aria-pressed="false" aria-controls="reco">
-        <span class="task__icon">${icon(t.icon)}</span><span>${esc(t.title)}</span></button>`,
+        <span class="task__icon">${icon(t.icon)}</span>
+        <span class="task__title">${esc(t.title)}</span>
+        <span class="task__mark" aria-hidden="true">${icon('arrowRight')}${icon('checkCircle')}</span>
+      </button>`,
     )
     .join('');
 }
@@ -235,7 +359,7 @@ function showReco(taskId) {
   $('#reco').innerHTML = `
     <div class="reco__card">
       <div>
-        <p class="reco__eyebrow">Рекомендуем для задачи «${esc(task.title)}»${ask('Пары «задача → тип прокси» нужно согласовать.')}</p>
+        <p class="reco__eyebrow">Рекомендуем для задачи «${esc(task.title)}»</p>
         <h3 class="reco__title">${esc(recoName(t))}</h3>
         <p class="reco__why">${esc(task.why)}${task.term ? tip(task.term) : ''}</p>
         <ul class="reco__facts">${facts.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
@@ -243,7 +367,7 @@ function showReco(taskId) {
       </div>
       <div class="reco__side">
         <p class="reco__price">от <b>${rub(priceFrom(t.id))}</b></p>
-        <button type="button" class="btn btn--primary btn--lg btn--block" data-open-config="${t.id}">Выбрать этот вариант</button>
+        <button type="button" class="btn btn--primary btn--lg btn--block" data-open-config="${t.id}">Выбрать<span class="reco__btn-tail">этот вариант</span><span class="reco__btn-price">от ${rub(priceFrom(t.id))}</span></button>
         <a class="link" href="#compare">Сравнить все типы</a>
       </div>
     </div>`;
@@ -255,7 +379,7 @@ function showReco(taskId) {
    ========================================================================== */
 const compareRows = [
   ['Для кого', (t) => esc(t.audience)],
-  ['Скорость до', (t) => esc(t.speed) + (t.speedQuestion ? `*${ask(t.speedQuestion)}` : '')],
+  ['Скорость до', (t) => esc(t.speed)],
   ['Подключений', (t) => esc(t.connections)],
   ['Пользователей на IP', (t) => esc(t.usersPerIp)],
   [`Смена IP${tip('rotation')}`, (t) => esc(t.ipChange)],
@@ -307,9 +431,6 @@ function renderCompare() {
       </article>`,
     )
     .join('');
-
-  const ipv4 = types.find((t) => t.speedQuestion);
-  $('#compare-footnote').textContent = ipv4 ? `* Вопрос к владельцу: ${ipv4.speedQuestion}` : '';
 }
 
 /* ==========================================================================
@@ -492,7 +613,7 @@ function renderDropdown(field, { id, label, options, value, onChange }) {
       ${o.flag ? `<span class="flag" style="background:${o.flag}" aria-hidden="true"></span>` : ''}
       <span class="dd__opt-label">${esc(o.label)}</span>
       ${meta}
-      ${sel ? `<span class="dd__check" aria-hidden="true">${icon('check')}</span>` : ''}
+      ${sel ? `<span class="dd__check" aria-hidden="true">${icon('checkCircle')}</span>` : ''}
     </li>`;
   };
   field.innerHTML = `
@@ -639,6 +760,8 @@ function bindDropdowns() {
    Прокси — та же модель состояния, что у конфигуратора; лицензия ProxyFarm — свой мини-расчёт.
    ========================================================================== */
 const FARM = 'farm';
+// Остаток, с которого наличие показываем как «Осталось N шт.»
+const LOW_STOCK = 20;
 const farmState = { modems: 1, plan: data.farm.plans[0].id };
 let qbMode = 'proxy';
 
@@ -745,6 +868,7 @@ function renderQuickbuy() {
       if (qbMode === FARM) {
         farmState.plan = v;
         renderQuickbuy();
+        renderFarmCalc();
       } else {
         state.period = v;
         updateConfig();
@@ -754,8 +878,11 @@ function renderQuickbuy() {
 
   // Общая стоимость: сумма, цена за единицу и количество. Купон вводится при оформлении
   const extra = $('#qb-extra');
+  const stock = $('#qb-stock');
   $('#qb-total-label').textContent = 'Общая стоимость:';
   if (farm) {
+    // У лицензии нет складского остатка — индикатор пустой и скрыт
+    stock.textContent = '';
     const r = farmCalc();
     $('#qb-total').textContent = rub(r.total);
     $('#qb-old').textContent = r.discount ? rub(r.subtotal) : '';
@@ -767,13 +894,56 @@ function renderQuickbuy() {
   } else {
     const r = calc();
     const max = stockOf(countryById[state.country]);
+    const days = periodById[state.period].days;
+    // Наличие по выбранному тарифу и стране; мало — «Осталось N шт.» янтарным
+    const low = max <= LOW_STOCK;
+    stock.classList.toggle('is-low', low);
+    stock.innerHTML = `${low ? 'Осталось' : 'В наличии'} <b>${max} шт.</b>`;
     $('#qb-total').textContent = rub(r.total);
     $('#qb-old').textContent = r.discount ? rub(r.subtotal) : '';
-    $('#qb-unit').textContent = state.qty > 1 ? `(${state.qty} × ${rub(r.unit)})` : `(${rub(r.unit)} за шт.)`;
+    $('#qb-unit').innerHTML =
+      (state.qty > 1 ? `(${state.qty} × ${rub(r.unit)})` : `(${rub(r.unit)} за шт.)`) +
+      (days > 1 ? `<span class="qb-desk"> · ≈ ${rub(r.unit / days)} в день</span>` : '');
     extra.innerHTML = `
       ${stepperHtml('qty', state.qty, max, null, 'Количество, шт.')}
-      <span class="qb-qty-unit">шт.${r.check.ok ? ` · купон ${esc(r.check.promo.code)}` : ''}</span>`;
+      <span class="qb-qty-unit">шт.<span class="qb-mob">${r.check.ok ? ` · купон ${esc(r.check.promo.code)}` : ''}</span></span>
+      <span class="qb-desk qb-tools">${qbCouponHtml(r)}<button type="button" class="qb-link" data-qb-cart>${icon('cart')}В корзину</button></span>`;
     $('#qb-buy').textContent = 'Купить прокси';
+  }
+}
+
+/* ПК: купон прямо в форме первого экрана — «Есть купон?» → поле и «Применить»; применённый — с «Убрать» */
+let qbCouponOpen = false;
+let qbCouponError = '';
+
+function qbCouponHtml(r) {
+  if (r.check.ok)
+    return `<span class="qb-coupon qb-coupon--ok">${icon('checkCircle')}${esc(r.check.promo.code)} −${r.check.promo.discount}% <button type="button" class="qb-link" data-qb-coupon-clear>Убрать</button></span>`;
+  if (!qbCouponOpen) return `<button type="button" class="qb-link" data-qb-coupon-open>${icon('tag')}Есть купон?</button>`;
+  return `<span class="qb-coupon">
+      <input class="qb-coupon__input" id="qb-coupon-input" aria-label="Код купона" autocomplete="off" spellcheck="false" placeholder="Код купона" value="${esc(state.coupon)}"${qbCouponError ? ' aria-invalid="true" aria-describedby="qb-coupon-msg"' : ''}>
+      <button type="button" class="qb-coupon__apply" data-qb-coupon-apply>Применить</button>
+      ${qbCouponError ? `<span class="qb-coupon__msg" id="qb-coupon-msg" role="alert">${esc(qbCouponError)}</span>` : ''}
+    </span>`;
+}
+
+function applyQbCoupon() {
+  const code = $('#qb-coupon-input').value.trim().toUpperCase();
+  const check = checkCoupon(code);
+  if (check.ok) {
+    state.coupon = code;
+    $('#coupon-input').value = code;
+    qbCouponOpen = false;
+    qbCouponError = '';
+    updateConfig();
+    $('#qb-buy').focus({ preventScroll: true });
+    srStatus(`${check.msg}. Итого ${rub(calc().total)}`);
+  } else {
+    qbCouponError = check.empty ? 'Введите код купона.' : check.msg;
+    renderQuickbuy();
+    const input = $('#qb-coupon-input');
+    input.value = code;
+    input.focus();
   }
 }
 
@@ -791,6 +961,7 @@ function setStep(kind, value) {
   if (kind === 'modems') {
     farmState.modems = clamp(value || 1, 1, data.farm.maxModems);
     renderQuickbuy();
+    renderFarmCalc();
   } else {
     state.qty = clamp(value || 1, 1, stockOf(countryById[state.country]));
     updateConfig();
@@ -802,6 +973,121 @@ function farmItem() {
   return { kind: FARM, modems: farmState.modems, plan: r.plan.id, qty: farmState.modems, subtotal: r.subtotal, discount: r.discount, total: r.total };
 }
 
+/* Партнёрская программа на ПК: сколько клиентов приведёте → доход в месяц.
+   Считаем на реальной цене сайта — приватный мобильный прокси на 30 дней, процент — из партнёрки */
+const PARTNER_CLIENTS = [5, 10, 25, 50, 100];
+let partnerClients = 10;
+const partnerPrice = () => data.prices.private['30d'];
+const partnerPerClient = () => (partnerPrice() * data.partnerProgram.percent) / 100;
+const renderPartnerSum = () => ($('#pcalc-sum').textContent = `до ${rub(partnerPerClient() * partnerClients)}`);
+
+function renderPartnerCalc() {
+  $('#pcalc-chips').innerHTML = PARTNER_CLIENTS.map(
+    (n) => `<label class="pcalc__chip">
+      <input type="radio" name="pcalc" value="${n}"${n === partnerClients ? ' checked' : ''}>
+      <span>${n}</span><span class="pcalc__check" aria-hidden="true">${icon('checkCircle')}</span>
+    </label>`,
+  ).join('');
+  renderPartnerSum();
+  $('#pcalc-note').textContent = `Если каждый продлевает приватный мобильный прокси за ${rub(partnerPrice())} в месяц — с одного клиента до ${rub(partnerPerClient())}.`;
+}
+
+// Только сумма: список не перерисовываем, чтобы не терять фокус при выборе стрелками
+function bindPartnerCalc() {
+  $('#pcalc-chips').addEventListener('change', (e) => {
+    partnerClients = Number(e.target.value);
+    renderPartnerSum();
+  });
+}
+
+/* ProxyFarm на ПК: калькулятор лицензии — модемы ползунком или счётчиком, срок, итог.
+   Состояние общее с формой первого экрана (режим «Лицензия ProxyFarm») */
+function renderFarmCalc() {
+  const r = farmCalc();
+  const n = farmState.modems;
+  const max = data.farm.maxModems;
+  const input = $('#fcalc-input');
+  if (document.activeElement !== input) input.value = n;
+  const range = $('#fcalc-range');
+  range.value = n;
+  range.style.setProperty('--p', `${((n - 1) / (max - 1)) * 100}%`);
+  range.setAttribute('aria-valuetext', `${n} ${plural(n, ['модем', 'модема', 'модемов'])}`);
+  $('[data-fcalc-step="-1"]').disabled = n <= 1;
+  $('[data-fcalc-step="1"]').disabled = n >= max;
+  $$('[name="fcalc-plan"]').forEach((el) => (el.checked = el.value === r.plan.id));
+  $('#fcalc-total-label').textContent = `Итого за ${r.plan.label}`;
+  $('#fcalc-total').textContent = rub(r.total);
+  $('#fcalc-old').textContent = r.discount ? rub(r.subtotal) : '';
+  const perModem = rub(r.total / n / r.plan.months);
+  $('#fcalc-unit').textContent = r.discount
+    ? `${perModem} за модем в месяц · экономия ${rub(r.discount)}`
+    : `${perModem} за модем в месяц`;
+}
+
+function bindFarmCalc() {
+  const f = data.farm;
+  const box = $('.fcalc');
+  const input = $('#fcalc-input');
+  const range = $('#fcalc-range');
+  $('#farm-points').innerHTML = f.benefits
+    .map((b, i) => `<li><span class="farm-desk__num">/0${i + 1}</span><span>${esc(b)}</span></li>`)
+    .join('');
+  $('#fcalc-plans').innerHTML = f.plans
+    .map(
+      (p) => `<label class="fcalc__plan">
+        <input type="radio" name="fcalc-plan" value="${p.id}">
+        <span class="fcalc__plan-name">${esc(p.label)}</span>
+        ${p.discount ? `<span class="fcalc__plan-badge">−${p.discount}%</span>` : ''}
+        <span class="fcalc__plan-check" aria-hidden="true">${icon('checkCircle')}</span>
+      </label>`,
+    )
+    .join('');
+  $('#fcalc-trial').textContent = `Попробовать ${f.trialDays} дней бесплатно`;
+  $('#fcalc-max').textContent = f.maxModems;
+  input.max = f.maxModems;
+  range.max = f.maxModems;
+
+  const sync = () => {
+    renderFarmCalc();
+    if (qbMode === FARM) renderQuickbuy();
+  };
+  const setModems = (v) => {
+    farmState.modems = clamp(v || 1, 1, f.maxModems);
+    sync();
+  };
+  const announce = () => srStatus(`Итого ${$('#fcalc-total').textContent}`);
+
+  range.addEventListener('input', () => setModems(Number(range.value)));
+  range.addEventListener('change', announce);
+  input.addEventListener('input', () => {
+    const v = parseInt(input.value, 10);
+    if (v >= 1) setModems(v);
+  });
+  // Пустое или лишнее значение после ввода — приводим к допустимому
+  input.addEventListener('change', () => {
+    setModems(parseInt(input.value, 10));
+    input.value = farmState.modems;
+    announce();
+  });
+  box.addEventListener('click', (e) => {
+    const step = e.target.closest('[data-fcalc-step]');
+    if (step) {
+      setModems(farmState.modems + Number(step.dataset.fcalcStep));
+      // Кнопка стала недоступной на краю — фокус не теряется, уходит в поле
+      if (step.disabled) input.focus();
+      announce();
+    }
+    if (e.target.closest('[data-fcalc-buy]')) openCheckout([farmItem()], 'farm');
+  });
+  box.addEventListener('change', (e) => {
+    if (e.target.name !== 'fcalc-plan') return;
+    farmState.plan = e.target.value;
+    sync();
+    announce();
+  });
+  renderFarmCalc();
+}
+
 function bindQuickbuy() {
   const form = $('#quickbuy');
   form.addEventListener('change', (e) => {
@@ -809,6 +1095,38 @@ function bindQuickbuy() {
     if (kind) setStep(kind, parseInt(e.target.value, 10));
   });
   form.addEventListener('click', (e) => {
+    if (e.target.closest('[data-qb-coupon-open]')) {
+      qbCouponOpen = true;
+      renderQuickbuy();
+      $('#qb-coupon-input').focus();
+      return;
+    }
+    if (e.target.closest('[data-qb-coupon-apply]')) {
+      applyQbCoupon();
+      return;
+    }
+    if (e.target.closest('[data-qb-coupon-clear]')) {
+      state.coupon = '';
+      $('#coupon-input').value = '';
+      qbCouponOpen = false;
+      updateConfig();
+      $('[data-qb-coupon-open]').focus();
+      return;
+    }
+    const cartBtn = e.target.closest('[data-qb-cart]');
+    if (cartBtn) {
+      addToCart();
+      // Отклик прямо на кнопке: «✓ Добавлено» на 2 секунды
+      cartBtn.classList.add('is-done');
+      cartBtn.innerHTML = `${icon('checkCircle')}Добавлено`;
+      clearTimeout(cartBtn._timer);
+      cartBtn._timer = setTimeout(() => {
+        if (!cartBtn.isConnected) return;
+        cartBtn.classList.remove('is-done');
+        cartBtn.innerHTML = `${icon('cart')}В корзину`;
+      }, 2000);
+      return;
+    }
     const b = e.target.closest('[data-step]');
     if (!b) return;
     const kind = b.dataset.step;
@@ -816,6 +1134,19 @@ function bindQuickbuy() {
     setStep(kind, cur + Number(b.dataset.delta));
     const again = $(`[data-step="${kind}"][data-delta="${b.dataset.delta}"]`);
     (again && !again.disabled ? again : $(`[data-step-input="${kind}"]`))?.focus({ preventScroll: true });
+  });
+  // Enter в поле купона применяет купон, а не отправляет форму на оплату; Esc — свернуть поле
+  form.addEventListener('keydown', (e) => {
+    if (e.target.id !== 'qb-coupon-input') return;
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      applyQbCoupon();
+    } else if (e.key === 'Escape') {
+      qbCouponOpen = false;
+      qbCouponError = '';
+      renderQuickbuy();
+      $('[data-qb-coupon-open]').focus();
+    }
   });
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -847,7 +1178,21 @@ function scrollTabIntoView() {
   tabs.scrollTo({ left, behavior: scrollBehavior() });
 }
 
+/* ПК: блока «Настройте заказ» нет — всё ведёт к форме первого экрана, выбор уже подставлен */
+function goToQuickbuy() {
+  qbMode = 'proxy';
+  if (state.coupon) qbCouponOpen = false;
+  renderQuickbuy();
+  window.scrollTo({ top: 0, behavior: scrollBehavior() });
+  const form = $('#quickbuy');
+  form.classList.remove('is-flash');
+  void form.offsetWidth;
+  form.classList.add('is-flash');
+  $('#qb-buy').focus({ preventScroll: true });
+}
+
 function goToConfig() {
+  if (mqDesktop.matches) return goToQuickbuy();
   $('#buy').scrollIntoView({ behavior: scrollBehavior() });
   flashTabs();
   $(`#tab-${state.type}`).focus({ preventScroll: true });
@@ -858,8 +1203,10 @@ function openConfig(typeId) {
   goToConfig();
 }
 
-function applyPromo(promoId) {
+// «Применить» делает всё за одно нажатие: скидка в форме заказа и код в буфере (для бота, кабинета, на потом)
+async function applyPromo(promoId) {
   const p = data.promos.find((x) => x.id === promoId);
+  const copied = await copyText(p.code);
   const notes = [];
   if (p.types && !p.types.includes(state.type)) selectType(p.applyType);
   if (p.periods && !p.periods.includes(state.period)) {
@@ -874,7 +1221,7 @@ function applyPromo(promoId) {
   $('#coupon-input').value = p.code;
   updateConfig({ tabs: true });
   goToConfig();
-  toast(`Купон ${p.code} применён${notes.length ? ` · выбрали ${notes.join(', ')}` : ''}`);
+  toast(`Купон ${p.code} применён${copied ? ' и скопирован' : ''}${notes.length ? ` · выбрали ${notes.join(', ')}` : ''}`);
 }
 
 function bindConfig() {
@@ -1382,12 +1729,70 @@ function renderReviews() {
           <div><p class="review__name">${esc(r.name)}</p><p class="review__date">${formatDate(r.date)}</p></div>
           <span class="badge badge--neutral">${esc(r.source)}</span>
         </div>
-        <span class="review__stars" role="img" aria-label="Оценка ${r.rating} из 5">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+        <span class="review__stars" role="img" aria-label="Оценка ${r.rating} из 5">${starsRow(r.rating)}</span>
         <p class="review__text" id="review-text-${i}">${esc(r.text)}</p>
         <button type="button" class="linklike review__more" aria-expanded="false" aria-controls="review-text-${i}" hidden>Читать полностью</button>
       </article>`,
     )
     .join('');
+  renderReviewMarquee(list);
+}
+
+/* ПК: бегущая лента отзывов в духе proxy-seller — аватар с инициалами, имя, площадка и дата, звёзды, текст.
+   Список повторён дважды для бесшовной прокрутки; копия скрыта от скринридеров и клавиатуры */
+const initials = (name) =>
+  name
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join('')
+    .replace(/[^А-ЯЁA-Z]/gi, '')
+    .slice(0, 2)
+    .toUpperCase();
+
+function reviewCard(r, i, copy) {
+  return `<article class="rcard"${copy ? ' aria-hidden="true" inert' : ''}>
+      <div class="rcard__head">
+        <span class="rcard__avatar" aria-hidden="true">${esc(initials(r.name))}</span>
+        <div class="rcard__who">
+          <p class="rcard__name">${esc(r.name)}</p>
+          <p class="rcard__meta">${esc(r.source)} · ${formatDate(r.date)}</p>
+        </div>
+      </div>
+      <span class="rcard__stars" role="img" aria-label="Оценка ${r.rating} из 5">${starsRow(r.rating)}</span>
+      <p class="rcard__text">${esc(r.text)}</p>
+      <button type="button" class="rcard__more" data-review="${i}" hidden>Читать полностью</button>
+    </article>`;
+}
+
+function renderReviewMarquee(list) {
+  const cards = list.map((r, i) => reviewCard(r, i, false)).join('');
+  const copies = list.map((r, i) => reviewCard(r, i, true)).join('');
+  $('#review-marquee-track').innerHTML = cards + copies;
+  $('#review-bonus').textContent = ` −${data.reviewPromo.discount}%`;
+}
+
+function checkMarqueeClamp() {
+  $$('.rcard').forEach((card) => {
+    const p = $('.rcard__text', card);
+    $('.rcard__more', card).hidden = p.scrollHeight <= p.clientHeight + 1;
+  });
+}
+
+function bindReviewMarquee() {
+  const list = [...data.reviews].sort((a, b) => b.date.localeCompare(a.date));
+  $('#review-marquee').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-review]');
+    if (!b) return;
+    const r = list[Number(b.dataset.review)];
+    $('#review-dialog-title').textContent = `Отзыв: ${r.name}`;
+    $('#review-dialog-body').innerHTML = `
+      <p class="rcard__meta">${esc(r.source)} · ${formatDate(r.date)}</p>
+      <span class="rcard__stars rcard__stars--big" role="img" aria-label="Оценка ${r.rating} из 5">${starsRow(r.rating)}</span>
+      <p class="rcard__full">${esc(r.text)}</p>`;
+    openDialog($('#review-dialog'));
+  });
+  checkMarqueeClamp();
+  document.fonts?.ready.then(checkMarqueeClamp);
 }
 
 function checkClamp() {
@@ -1459,11 +1864,12 @@ function renderPromos() {
     return `<article class="promo">
       <h3 class="promo__title">${esc(p.title)}</h3>
       <p class="promo__cond">${esc(p.condition)}</p>
+      <span class="promo__perf" aria-hidden="true"></span>
       <div class="promo__code">
         <code id="code-${p.id}">${esc(p.code)}</code>
         <button type="button" class="promo__copy" data-copy="${esc(p.code)}" aria-describedby="code-${p.id}">Скопировать</button>
       </div>
-      <p class="promo__valid">Действует до ${formatDate(p.validUntil)}${left > 0 ? ` · осталось ${left} ${plural(left, ['день', 'дня', 'дней'])}` : ''}</p>
+      <p class="promo__valid${left > 0 && left <= 14 ? ' promo__valid--soon' : ''}"><span>До ${formatDate(p.validUntil)}</span>${left > 0 ? `<span class="promo__valid-sep"> · </span><b>осталось ${left} ${plural(left, ['день', 'дня', 'дней'])}</b>` : ''}</p>
       <button type="button" class="btn btn--outline btn--block" data-apply-promo="${p.id}">Применить</button>
     </article>`;
   });
@@ -1562,6 +1968,14 @@ function bindGlobal() {
     }
     if (tipFor) hideTip();
 
+    // ПК: ссылки на «Настройте заказ» (пункт меню «Купить прокси») ведут к форме первого экрана
+    if (t.closest('a[href="#buy"]') && mqDesktop.matches) {
+      e.preventDefault();
+      t.closest('dialog')?.close();
+      goToQuickbuy();
+      return;
+    }
+
     const cfg = t.closest('[data-open-config]');
     if (cfg) {
       e.preventDefault();
@@ -1573,6 +1987,12 @@ function bindGlobal() {
     if (t.closest('[data-open-test]')) {
       e.preventDefault();
       openTest();
+      return;
+    }
+
+    // «Корзина» в футере — то же, что кнопка корзины в шапке
+    if (t.closest('[data-open-cart]')) {
+      $('#cart-btn').click();
       return;
     }
 
@@ -1758,8 +2178,10 @@ function updateWhy() {
     <div class="why__panel-inner">
       <span class="why__panel-num">/${num}</span>
       <h3 class="why__panel-title">${esc(b.title)}</h3>
-      <p class="why__panel-text">${esc(b.text)}</p>
-      ${b.cta === 'test' ? '<button type="button" class="why__cta" data-open-test>Получить бесплатный тест</button>' : ''}
+      <div class="why__panel-foot">
+        <p class="why__panel-text">${esc(b.text)}</p>
+        ${b.cta === 'test' ? '<button type="button" class="why__cta" data-open-test>Получить бесплатный тест</button>' : ''}
+      </div>
     </div>`;
 }
 
@@ -1884,7 +2306,38 @@ function renderProduct() {
   syncHeaderCta();
 }
 
+/* ПК: карточка типа всегда высотой с самую высокую вкладку — при переключении блок не прыгает */
+const mqDesktop = window.matchMedia('(min-width: 1024px)');
+
+// Высоту самой высокой вкладки отдаём в CSS-переменную: CSS сам решает, не нужно ли карточке быть ещё выше под экран
+function lockProductHeight() {
+  const panel = $('#product-panel');
+  panel.style.removeProperty('--lock-h');
+  if (!mqDesktop.matches) return;
+  const current = productType;
+  let max = 0;
+  for (const t of productTabs()) {
+    productType = t.id;
+    renderProduct();
+    max = Math.max(max, panel.offsetHeight);
+  }
+  productType = current;
+  renderProduct();
+  panel.style.setProperty('--lock-h', `${max}px`);
+}
+
 function bindProduct() {
+  // Пересчёт при смене ширины контейнера (окно, масштаб) и после загрузки шрифтов
+  let lockedWidth = 0;
+  let resizeTimer = 0;
+  new ResizeObserver(([entry]) => {
+    const w = Math.round(entry.contentRect.width);
+    if (w === lockedWidth) return;
+    lockedWidth = w;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(lockProductHeight, 100);
+  }).observe($('#compare .container'));
+  document.fonts?.ready.then(lockProductHeight);
   const tabs = $('#product-tabs');
   tabs.addEventListener('click', (e) => {
     const b = e.target.closest('[data-ptype]');
@@ -2056,6 +2509,8 @@ function initHeroCanvas() {
 hydrateIcons();
 renderStatic();
 renderTasks();
+// ПК: первая задача выбрана сразу — видно, как работает подбор; дальше клиент переключает сам
+if (window.matchMedia('(min-width: 1024px)').matches) showReco(data.tasks[0].id);
 renderCompare();
 renderReviews();
 renderPromos();
@@ -2067,6 +2522,8 @@ hydrateIcons();
 
 bindHeader();
 bindQuickbuy();
+bindFarmCalc();
+bindPartnerCalc();
 bindDropdowns();
 bindFeatures();
 bindWhy();
@@ -2080,6 +2537,28 @@ bindChat();
 bindCarousel();
 bindSticky();
 bindGlobal();
+bindTypograph();
+bindSteps();
+bindReviewMarquee();
+// ПК: в FAQ открыт один вопрос за раз (родной аккордеон <details name>); на mobile — как было
+// ПК: вопросы в две независимые колонки (раскрытие слева не растягивает правую) и один открытый вопрос.
+// Mobile — один список, как было
+const syncFaqAccordion = () => {
+  const faq = $('.faq');
+  const items = $$('.faq__item', faq);
+  items.forEach((d) => (mqDesktop.matches ? d.setAttribute('name', 'faq') : d.removeAttribute('name')));
+  $$('.faq__col', faq).forEach((col) => col.replaceWith(...col.children));
+  if (!mqDesktop.matches) return;
+  const half = Math.ceil(items.length / 2);
+  [items.slice(0, half), items.slice(half)].forEach((group) => {
+    const col = document.createElement('div');
+    col.className = 'faq__col';
+    col.append(...group);
+    faq.append(col);
+  });
+};
+syncFaqAccordion();
+mqDesktop.addEventListener('change', syncFaqAccordion);
 syncHeaderCta();
 checkClamp();
 document.fonts?.ready.then(checkClamp);
