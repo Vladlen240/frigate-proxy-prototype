@@ -8489,9 +8489,12 @@ dd {
   }
 }
 
-/* Значок подсказки — иконка «Информация» владельца: кружок уже нарисован, своя обводка кнопке не нужна */
+/* Значок подсказки — иконка «Информация» владельца: кружок уже нарисован, своя обводка кнопке не нужна.
+   Залитый кружок крупнее прежнего — опускаем на середину строки и не прижимаем к тексту */
 .tip {
+  margin-left: 6px;
   border: 0;
+  vertical-align: -0.15em;
 }
 
 .tip__i {
@@ -11213,8 +11216,9 @@ dd {
     grid-template-columns: 1fr auto;
     grid-template-rows: auto 1fr auto auto;
     align-items: start;
-    min-height: 240px;
-    padding: 40px;
+    min-height: 200px;
+    /* Маленькая плашка — поля 20 px со всех сторон (правило владельца) */
+    padding: 20px;
     border: 0;
     border-radius: 24px;
     background: var(--c-bg-soft);
@@ -11246,8 +11250,12 @@ dd {
     height: 24px;
   }
 
+  /* Видимый край стрелки — на том же отступе от края, что остальное: у значка свои поля ~6 px справа.
+     По высоте — по центру иконки канала */
   .support-card__arrow {
     justify-self: end;
+    align-self: center;
+    margin-right: -6px;
     color: var(--c-muted);
     transition:
       transform 0.3s ease,
@@ -11274,6 +11282,8 @@ dd {
     margin-top: 6px;
     color: var(--c-muted);
     font-size: 15px;
+    /* Без лишнего межстрочного воздуха: до низа карточки видимые 40 px */
+    line-height: 1.2;
     overflow-wrap: anywhere;
     transition: color 0.2s ease;
   }
